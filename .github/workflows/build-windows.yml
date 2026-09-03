@@ -33,15 +33,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: iRetina-Windows-Setup
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.msi
           if-no-files-found: error
-
-      - name: Upload portable build
-        uses: actions/upload-artifact@v4
-        with:
-          name: iRetina-Windows-Portable
-          path: dist/*.exe
-          if-no-files-found: warn
 
   # Auto-create a GitHub Release when a version tag is pushed
   release:
