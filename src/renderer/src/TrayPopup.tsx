@@ -1,60 +1,32 @@
 import React, { useEffect, useState } from 'react'
-import { makeStyles, tokens, Button, Divider, Text } from '@fluentui/react-components'
-import { Eye24Regular, Settings24Regular, ArrowExit20Regular, Play24Regular } from '@fluentui/react-icons'
 import type { Prefs, EngineState } from './App'
-
-const useStyles = makeStyles({
-  root: {
-    width: '100%',
-    height: '100%',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    background: 'rgba(32, 32, 32, 0.92)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '12px',
-    border: '1px solid rgba(255,255,255,0.08)',
-    color: tokens.colorNeutralForeground1
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
-  },
-  eyeIcon: {
-    fontSize: '22px'
-  },
-  titleBlock: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  countdown: {
-    fontFamily: "'Segoe UI Variable', monospace",
-    fontSize: '36px',
-    fontWeight: '700',
-    color: tokens.colorBrandForeground1,
-    fontVariantNumeric: 'tabular-nums',
-    lineHeight: '1'
-  },
-  statusLabel: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground3,
-    marginTop: '2px'
-  },
-  actions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    marginTop: '4px'
-  }
-})
 
 function formatTime(ms: number) {
   const totalSec = Math.max(0, Math.floor(ms / 1000))
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+const btn: React.CSSProperties = {
+  width: '100%',
+  padding: '11px 0',
+  borderRadius: '8px',
+  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'rgba(255,255,255,0.07)',
+  color: '#fff',
+  fontSize: '14px',
+  fontWeight: '500',
+  fontFamily: "'Segoe UI Variable', 'Segoe UI', sans-serif",
+  cursor: 'pointer',
+  letterSpacing: '0.1px'
+}
+
+const btnPrimary: React.CSSProperties = {
+  ...btn,
+  background: '#0078D4',
+  border: '1px solid #106EBE',
+  fontWeight: '600'
 }
 
 export default function TrayPopup({
@@ -68,8 +40,8 @@ export default function TrayPopup({
   setPref: (key: keyof Prefs, value: unknown) => Promise<void>
   refresh: () => Promise<void>
 }) {
-  const styles = useStyles()
   const [now, setNow] = useState(Date.now())
+  const [hovered, setHovered] = useState<string | null>(null)
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 500)
@@ -81,58 +53,104 @@ export default function TrayPopup({
   const isBreakActive = engineState.isBreakActive
 
   let countdownText = '—'
-  let statusText = 'Tracking eyes...'
+  let statusText = 'Active'
+  let statusColor = '#4CAF50'
 
   if (isBreakActive) {
-    countdownText = 'NOW'
-    statusText = 'Break in progress'
+    countdownText = 'Now'
+    statusText = 'Break active'
+    statusColor = '#FF9800'
   } else if (isPaused) {
-    countdownText = 'Paused'
-    statusText = engineState.pauseReason ?? 'Paused'
+    countdownText = '--:--'
+    statusText = 'Paused'
+    statusColor = '#F44336'
   } else if (engineState.nextBreakETA) {
     countdownText = formatTime(remaining)
-    statusText = 'Until next break'
+    statusText = 'Active'
+    statusColor = '#4CAF50'
   }
 
   return (
-    <div className={styles.root}>
-      <div className={styles.header}>
-        <span className={styles.eyeIcon}>👁</span>
-        <Text weight="semibold" size={400}>iRetina</Text>
+    <div style={{
+      width: '100%',
+      height: '100%',
+      padding: '18px 18px 16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      background: 'rgba(28, 28, 32, 0.96)',
+      backdropFilter: 'blur(24px)',
+      borderRadius: '12px',
+      border: '1px solid rgba(255,255,255,0.09)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      fontFamily: "'Segoe UI Variable', 'Segoe UI', sans-serif",
+      boxSizing: 'border-box'
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="../../assets/logo.png" style={{ width: 22, height: 22, borderRadius: '5px' }} />
+          <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>iRetina</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: statusColor }} />
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', fontWeight: '500' }}>{statusText}</span>
+        </div>
       </div>
 
-      <Divider style={{ opacity: 0.15 }} />
-
-      <div>
-        <div className={styles.countdown}>{countdownText}</div>
-        <div className={styles.statusLabel}>{statusText}</div>
+      {/* Countdown */}
+      <div style={{ textAlign: 'center', padding: '4px 0' }}>
+        <div style={{
+          fontSize: '52px',
+          fontWeight: '700',
+          color: '#4DA3FF',
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: '1',
+          letterSpacing: '-1px',
+          fontFamily: "'Segoe UI Variable', monospace"
+        }}>
+          {countdownText}
+        </div>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginTop: '5px', fontWeight: '400' }}>
+          until your next eye break
+        </div>
       </div>
 
-      <div className={styles.actions}>
-        <Button
-          icon={<Play24Regular />}
-          appearance="primary"
+      {/* Divider */}
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        <button
+          style={hovered === 'break' ? { ...btnPrimary, background: '#106EBE' } : btnPrimary}
+          onMouseEnter={() => setHovered('break')}
+          onMouseLeave={() => setHovered(null)}
           onClick={() => window.iretina.engine.triggerNow()}
         >
           Take Break Now
-        </Button>
-        <Button
-          icon={<Settings24Regular />}
-          appearance="subtle"
-          onClick={async () => {
-            await window.iretina.app.openSettings()
-            await window.iretina.app.closePopup()
-          }}
-        >
-          Settings
-        </Button>
-        <Button
-          icon={<ArrowExit20Regular />}
-          appearance="subtle"
-          onClick={() => window.iretina.app.quit()}
-        >
-          Quit iRetina
-        </Button>
+        </button>
+
+        <div style={{ display: 'flex', gap: '7px' }}>
+          <button
+            style={hovered === 'settings' ? { ...btn, background: 'rgba(255,255,255,0.12)', flex: 1 } : { ...btn, flex: 1 }}
+            onMouseEnter={() => setHovered('settings')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={async () => {
+              await window.iretina.app.openSettings()
+              await window.iretina.app.closePopup()
+            }}
+          >
+            Settings
+          </button>
+          <button
+            style={hovered === 'quit' ? { ...btn, background: 'rgba(255,255,255,0.12)', flex: 1 } : { ...btn, flex: 1 }}
+            onMouseEnter={() => setHovered('quit')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => window.iretina.app.quit()}
+          >
+            Quit
+          </button>
+        </div>
       </div>
     </div>
   )

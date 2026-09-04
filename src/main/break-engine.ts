@@ -176,7 +176,8 @@ function showOverlay() {
       win.focus()
       win.webContents.send('overlay:start', {
         durationSec: store.get('breakDurationSec'),
-        strict: store.get('strictBreakModeEnabled')
+        strict: store.get('strictBreakModeEnabled'),
+        breakNumber: store.get('breaksCompleted') + 1
       })
     })
 

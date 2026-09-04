@@ -1,96 +1,133 @@
 import React, { useEffect, useState } from 'react'
-import {
-  makeStyles,
-  tokens,
-  Switch,
-  Button,
-  Text,
-  Badge,
-  Divider,
-  Spinner
-} from '@fluentui/react-components'
-import {
-  PauseCircle24Regular,
-  Play24Regular,
-  Timer24Regular,
-  WeatherMoon24Regular
-} from '@fluentui/react-icons'
 import type { Prefs, EngineState } from '../App'
 
-const useStyles = makeStyles({
-  root: {
-    padding: '28px 32px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-    height: '100%',
-    overflowY: 'auto'
-  },
-  pageTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: tokens.colorNeutralForeground1
-  },
-  card: {
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '12px',
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    overflow: 'hidden'
-  },
-  cardHeader: {
-    padding: '14px 20px 10px',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground3,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`
-  },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px',
-    borderBottom: `1px solid rgba(255,255,255,0.04)`
-  },
-  rowLast: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px'
-  },
-  rowLeft: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px'
-  },
-  rowTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground1
-  },
-  rowSub: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground3
-  },
-  countdown: {
-    fontFamily: "'Segoe UI Variable', monospace",
-    fontSize: '28px',
-    fontWeight: '700',
-    color: tokens.colorBrandForeground1,
-    fontVariantNumeric: 'tabular-nums'
-  },
-  countdownPaused: {
-    fontSize: '16px',
-    fontWeight: '700',
-    color: tokens.colorStatusDangerForeground1
-  },
-  dndActions: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap'
-  }
-})
+const ROW: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '14px',
+  padding: '14px 18px',
+  borderBottom: '1px solid rgba(255,255,255,0.05)'
+}
+const ROW_LAST: React.CSSProperties = { ...ROW, borderBottom: 'none' }
+
+const ICON_WRAP: React.CSSProperties = {
+  width: 32,
+  height: 32,
+  borderRadius: '8px',
+  background: 'rgba(0,120,212,0.15)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0
+}
+
+const LABEL_BLOCK: React.CSSProperties = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2px'
+}
+
+const LABEL: React.CSSProperties = {
+  fontSize: '14px',
+  fontWeight: '600',
+  color: '#fff'
+}
+
+const SUBLABEL: React.CSSProperties = {
+  fontSize: '12px',
+  color: 'rgba(255,255,255,0.45)',
+  lineHeight: '1.4'
+}
+
+const SECTION_TITLE: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: '600',
+  color: 'rgba(255,255,255,0.4)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.6px',
+  padding: '0 2px',
+  marginBottom: '6px'
+}
+
+const CARD: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.04)',
+  borderRadius: '10px',
+  border: '1px solid rgba(255,255,255,0.07)',
+  overflow: 'hidden',
+  marginBottom: '22px'
+}
+
+function DropdownSelect({
+  value,
+  options,
+  onChange
+}: {
+  value: number
+  options: { label: string; value: number }[]
+  onChange: (v: number) => void
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{
+        background: 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: '6px',
+        color: '#fff',
+        fontSize: '13px',
+        fontWeight: '500',
+        padding: '6px 28px 6px 10px',
+        fontFamily: "'Segoe UI Variable','Segoe UI',sans-serif",
+        cursor: 'pointer',
+        outline: 'none',
+        appearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 8px center',
+        minWidth: '120px'
+      }}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value} style={{ background: '#1c1c20' }}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div
+      onClick={() => onChange(!checked)}
+      style={{
+        width: '44px',
+        height: '24px',
+        borderRadius: '12px',
+        background: checked ? '#0078D4' : 'rgba(255,255,255,0.15)',
+        position: 'relative',
+        cursor: 'pointer',
+        transition: 'background 0.2s ease',
+        flexShrink: 0,
+        border: checked ? '1px solid #106EBE' : '1px solid rgba(255,255,255,0.12)'
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: '2px',
+        left: checked ? '22px' : '2px',
+        width: '18px',
+        height: '18px',
+        borderRadius: '50%',
+        background: '#fff',
+        transition: 'left 0.2s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.4)'
+      }} />
+    </div>
+  )
+}
 
 function formatTime(ms: number) {
   const totalSec = Math.max(0, Math.floor(ms / 1000))
@@ -99,14 +136,8 @@ function formatTime(ms: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-function formatDuration(hours: number) {
-  if (hours === 1) return '1 hour'
-  if (hours % 1 === 0) return `${hours} hours`
-  const mins = Math.round((hours % 1) * 60)
-  const h = Math.floor(hours)
-  if (h === 0) return `${mins}m`
-  return `${h}h ${mins}m`
-}
+const intervalOptions = [5,10,15,20,25,30,45,60,90].map(v => ({ label: `${v} minutes`, value: v }))
+const durationOptions = [10,15,20,30,45,60,90,120,180].map(v => ({ label: `${v} seconds`, value: v }))
 
 export default function GeneralPage({
   prefs,
@@ -119,7 +150,6 @@ export default function GeneralPage({
   setPref: (key: keyof Prefs, value: unknown) => Promise<void>
   refresh: () => Promise<void>
 }) {
-  const styles = useStyles()
   const [now, setNow] = useState(Date.now())
   const [loginEnabled, setLoginEnabled] = useState(prefs.launchAtLogin)
 
@@ -130,133 +160,145 @@ export default function GeneralPage({
 
   const remaining = engineState.nextBreakETA ? engineState.nextBreakETA - now : 0
   const dndActive = prefs.dndEndTime ? Date.now() < prefs.dndEndTime : false
-  const dndRemaining = dndActive && prefs.dndEndTime ? formatDuration((prefs.dndEndTime - Date.now()) / 3_600_000) : ''
 
-  async function handleLoginToggle(enabled: boolean) {
-    setLoginEnabled(enabled)
-    await window.iretina.app.setLoginItem(enabled)
-    await setPref('launchAtLogin', enabled)
-  }
-
-  async function handleDNDActivate(hours: number) {
-    await window.iretina.engine.activateDND(hours)
-    await refresh()
-  }
-
-  async function handleDNDDeactivate() {
-    await window.iretina.engine.deactivateDND()
-    await refresh()
+  async function handleLoginToggle(v: boolean) {
+    setLoginEnabled(v)
+    await window.iretina.app.setLoginItem(v)
+    await setPref('launchAtLogin', v)
   }
 
   return (
-    <div className={styles.root}>
-      <div className={styles.pageTitle}>General</div>
-
-      {/* Countdown */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Until Next Break</div>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Countdown</div>
-          </div>
-          <div>
-            {engineState.isBreakActive ? (
-              <Badge appearance="tint" color="warning">Break Active</Badge>
-            ) : engineState.isPaused ? (
-              <div className={styles.countdownPaused}>Paused — {engineState.pauseReason}</div>
-            ) : engineState.nextBreakETA ? (
-              <div className={styles.countdown}>{formatTime(remaining)}</div>
-            ) : (
-              <Spinner size="tiny" />
-            )}
-          </div>
-        </div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Actions</div>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button
-              size="small"
-              icon={<Play24Regular />}
-              appearance="primary"
-              onClick={() => window.iretina.engine.triggerNow()}
-            >
-              Take Break Now
-            </Button>
-          </div>
+    <div style={{
+      padding: '28px 32px 32px',
+      height: '100%',
+      overflowY: 'auto',
+      fontFamily: "'Segoe UI Variable','Segoe UI',sans-serif",
+      boxSizing: 'border-box'
+    }}>
+      {/* Page heading */}
+      <div style={{ marginBottom: '6px' }}>
+        <div style={{ fontSize: '24px', fontWeight: '700', color: '#fff', marginBottom: '4px' }}>General</div>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+          Break cadence and when iRetina should stay out of your way.
         </div>
       </div>
 
-      {/* Smart Pause */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Smart Features</div>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Smart Pause</div>
-            <div className={styles.rowSub}>Pauses breaks when you lock your screen or put PC to sleep</div>
+      <div style={{ height: '24px' }} />
+
+      {/* Countdown section */}
+      <div style={SECTION_TITLE}>Countdown</div>
+      <div style={CARD}>
+        <div style={ROW}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+            </svg>
           </div>
-          <Switch
-            checked={prefs.smartPauseEnabled}
-            onChange={(_e, d) => setPref('smartPauseEnabled', d.checked)}
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Time between breaks</span>
+            <span style={SUBLABEL}>The 20-20-20 rule suggests 20 minutes</span>
+          </div>
+          <DropdownSelect
+            value={prefs.intervalMinutes}
+            options={intervalOptions}
+            onChange={(v) => setPref('intervalMinutes', v)}
           />
         </div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Activity Status</div>
+        <div style={ROW_LAST}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+            </svg>
           </div>
-          <Badge
-            appearance="tint"
-            color={!prefs.smartPauseEnabled ? 'subtle' : engineState.isPaused ? 'warning' : 'success'}
-          >
-            {!prefs.smartPauseEnabled ? 'Inactive' : engineState.isPaused ? 'Away' : 'Active'}
-          </Badge>
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Break length</span>
+            <span style={SUBLABEL}>How long the full-screen overlay stays up</span>
+          </div>
+          <DropdownSelect
+            value={prefs.breakDurationSec}
+            options={durationOptions}
+            onChange={(v) => setPref('breakDurationSec', v)}
+          />
         </div>
       </div>
 
-      {/* Do Not Disturb */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Do Not Disturb</div>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Status</div>
+      {/* Smart Pause section */}
+      <div style={SECTION_TITLE}>Smart Pause</div>
+      <div style={CARD}>
+        <div style={ROW_LAST}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
           </div>
-          <Badge appearance="tint" color={dndActive ? 'danger' : 'subtle'}>
-            {dndActive ? `Active — ${dndRemaining} left` : 'Inactive'}
-          </Badge>
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Pause the timer when I step away</span>
+            <span style={SUBLABEL}>Detects idle keyboard and mouse for over 2 minutes</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: prefs.smartPauseEnabled ? '#4DA3FF' : 'rgba(255,255,255,0.4)', fontWeight: '500' }}>
+              {prefs.smartPauseEnabled ? 'On' : 'Off'}
+            </span>
+            <Toggle checked={prefs.smartPauseEnabled} onChange={(v) => setPref('smartPauseEnabled', v)} />
+          </div>
         </div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>{dndActive ? 'End DND' : 'Activate DND for...'}</div>
+      </div>
+
+      {/* Do Not Disturb section */}
+      <div style={SECTION_TITLE}>Do Not Disturb</div>
+      <div style={CARD}>
+        <div style={ROW}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
           </div>
-          <div className={styles.dndActions}>
-            {dndActive ? (
-              <Button size="small" appearance="secondary" onClick={handleDNDDeactivate}>
-                End Now
-              </Button>
-            ) : (
-              <>
-                <Button size="small" onClick={() => handleDNDActivate(1)}>1 hr</Button>
-                <Button size="small" onClick={() => handleDNDActivate(2)}>2 hrs</Button>
-                <Button size="small" onClick={() => handleDNDActivate(4)}>4 hrs</Button>
-              </>
-            )}
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Skip breaks during full-screen apps</span>
           </div>
+          <Toggle checked={true} onChange={() => {}} />
+        </div>
+        <div style={ROW}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Silence during Teams calls and meetings</span>
+          </div>
+          <Toggle checked={false} onChange={() => {}} />
+        </div>
+        <div style={ROW_LAST}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </div>
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Quiet hours</span>
+            <span style={SUBLABEL}>10:00 PM – 7:00 AM</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
         </div>
       </div>
 
       {/* Startup */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Startup</div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Launch at Login</div>
-            <div className={styles.rowSub}>Start iRetina automatically when Windows starts</div>
+      <div style={SECTION_TITLE}>Startup</div>
+      <div style={CARD}>
+        <div style={ROW_LAST}>
+          <div style={ICON_WRAP}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4DA3FF" strokeWidth="2" strokeLinecap="round">
+              <polyline points="5,12 2,12 12,2 22,12 19,12"/><polyline points="5,12 5,20 10,20 10,14 14,14 14,20 19,20 19,12"/>
+            </svg>
           </div>
-          <Switch
-            checked={loginEnabled}
-            onChange={(_e, d) => handleLoginToggle(d.checked)}
-          />
+          <div style={LABEL_BLOCK}>
+            <span style={LABEL}>Launch at login</span>
+            <span style={SUBLABEL}>Start iRetina automatically when Windows starts</span>
+          </div>
+          <Toggle checked={loginEnabled} onChange={handleLoginToggle} />
         </div>
       </div>
     </div>
