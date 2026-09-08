@@ -1,213 +1,171 @@
-import React from 'react'
+import { makeStyles, mergeClasses, Switch, Slider } from '@fluentui/react-components'
 import {
-  makeStyles,
-  tokens,
-  Switch,
-  Button,
-  Slider,
-  Text,
-  SpinButton
-} from '@fluentui/react-components'
-import type { Prefs, EngineState } from '../App'
+  Timer20Regular,
+  Clock20Regular,
+  Alert20Regular,
+  LockClosed20Regular,
+  Speaker220Regular,
+  Checkmark16Filled
+} from '@fluentui/react-icons'
+import type { Prefs } from '../App'
+import { Page, Section, Card, Row, useUi } from './ui'
 
-const useStyles = makeStyles({
-  root: {
-    padding: '28px 32px',
+const useLocal = makeStyles({
+  slider: { width: '170px' },
+  modes: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
+  mode: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
-    height: '100%',
-    overflowY: 'auto'
+    gap: '7px',
+    padding: '16px',
+    cursor: 'pointer',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '14px',
+    boxShadow: 'var(--shadow-sm)',
+    transition: 'border-color .12s ease, background .12s ease',
+    ':hover': { background: 'var(--surface-hover)' }
   },
-  pageTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: tokens.colorNeutralForeground1
+  modeOn: {
+    border: '1px solid var(--accent)',
+    background: 'var(--accent-soft)'
   },
-  card: {
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '12px',
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    overflow: 'hidden'
-  },
-  cardHeader: {
-    padding: '14px 20px 10px',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground3,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`
-  },
-  row: {
+  modeHead: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px',
-    borderBottom: `1px solid rgba(255,255,255,0.04)`
-  },
-  rowLast: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px'
-  },
-  rowLeft: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px'
-  },
-  rowTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground1
-  },
-  rowSub: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground3
-  },
-  modeCards: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-    padding: '16px 20px'
-  },
-  modeCard: {
-    padding: '16px',
-    borderRadius: '10px',
-    border: '2px solid transparent',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.04)',
-    transition: 'all 0.15s ease'
-  },
-  modeCardSelected: {
-    padding: '16px',
-    borderRadius: '10px',
-    border: `2px solid ${tokens.colorBrandStroke1}`,
-    cursor: 'pointer',
-    background: `${tokens.colorBrandBackground2}`,
-    transition: 'all 0.15s ease'
-  },
-  modeTitle: {
+    gap: '8px',
     fontSize: '14px',
     fontWeight: '700',
-    color: tokens.colorNeutralForeground1,
-    marginBottom: '4px'
+    color: 'var(--text)'
   },
-  modeSub: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground3
-  }
+  modeCheck: {
+    marginLeft: 'auto',
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'var(--accent)',
+    color: 'var(--on-accent)'
+  },
+  modeDesc: { fontSize: '12px', lineHeight: 1.5, color: 'var(--text-mute)' }
 })
 
 export default function TimerPage({
   prefs,
-  engineState: _engineState,
   setPref
 }: {
   prefs: Prefs
-  engineState: EngineState
   setPref: (key: keyof Prefs, value: unknown) => Promise<void>
 }) {
-  const styles = useStyles()
+  const u = useUi()
+  const l = useLocal()
+  const strict = prefs.strictBreakModeEnabled
 
   return (
-    <div className={styles.root}>
-      <div className={styles.pageTitle}>Break Timer</div>
-
-      {/* Timing */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Timing</div>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Break Interval</div>
-            <div className={styles.rowSub}>How often to remind you to rest your eyes</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Slider
-              min={2}
-              max={90}
-              step={1}
-              value={prefs.intervalMinutes}
-              onChange={(_e, d) => setPref('intervalMinutes', d.value)}
-              style={{ width: '120px' }}
-            />
-            <Text weight="semibold" style={{ minWidth: '50px', textAlign: 'right' }}>
-              {prefs.intervalMinutes} min
-            </Text>
-          </div>
-        </div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Break Duration</div>
-            <div className={styles.rowSub}>How long each break lasts</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Slider
-              min={10}
-              max={180}
-              step={5}
-              value={prefs.breakDurationSec}
-              onChange={(_e, d) => setPref('breakDurationSec', d.value)}
-              style={{ width: '120px' }}
-            />
-            <Text weight="semibold" style={{ minWidth: '50px', textAlign: 'right' }}>
-              {prefs.breakDurationSec}s
-            </Text>
-          </div>
-        </div>
-      </div>
-
-      {/* Reminders */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Reminder</div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Heads-Up Notification</div>
-            <div className={styles.rowSub}>Get a Windows notification 1 minute before your break</div>
-          </div>
-          <Switch
-            checked={prefs.headsUpEnabled}
-            onChange={(_e, d) => setPref('headsUpEnabled', d.checked)}
+    <Page title="Break Timer" subtitle="Tune the rhythm of your breaks">
+      <Section label="Schedule">
+        <Card>
+          <Row
+            first
+            icon={<Timer20Regular />}
+            title="Time between breaks"
+            desc="How long you work before the next reminder"
+            value={`${prefs.intervalMinutes} min`}
+            right={
+              <Slider
+                className={l.slider}
+                min={2}
+                max={90}
+                value={prefs.intervalMinutes}
+                onChange={(_e, d) => setPref('intervalMinutes', d.value)}
+              />
+            }
           />
-        </div>
-      </div>
+          <Row
+            icon={<Clock20Regular />}
+            title="Break length"
+            desc="How long each break lasts"
+            value={`${prefs.breakDurationSec} s`}
+            right={
+              <Slider
+                className={l.slider}
+                min={10}
+                max={180}
+                step={5}
+                value={prefs.breakDurationSec}
+                onChange={(_e, d) => setPref('breakDurationSec', d.value)}
+              />
+            }
+          />
+        </Card>
+      </Section>
 
-      {/* Break Mode */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Break Mode</div>
-        <div className={styles.modeCards}>
+      <Section label="Before a break">
+        <Card>
+          <Row
+            first
+            icon={<Alert20Regular />}
+            title="Heads-up notification"
+            desc="A quiet nudge one minute before the break begins"
+            right={
+              <Switch
+                checked={prefs.headsUpEnabled}
+                onChange={(_e, d) => setPref('headsUpEnabled', d.checked)}
+              />
+            }
+          />
+        </Card>
+      </Section>
+
+      <Section label="Break mode">
+        <div className={l.modes}>
           <div
-            className={!prefs.strictBreakModeEnabled ? styles.modeCardSelected : styles.modeCard}
+            className={mergeClasses(l.mode, !strict ? l.modeOn : undefined)}
             onClick={() => setPref('strictBreakModeEnabled', false)}
           >
-            <div className={styles.modeTitle}>Normal Mode</div>
-            <div className={styles.modeSub}>You can dismiss or snooze breaks anytime</div>
+            <div className={l.modeHead}>
+              Relaxed
+              {!strict && <span className={l.modeCheck}><Checkmark16Filled /></span>}
+            </div>
+            <div className={l.modeDesc}>Skip or postpone a break whenever you need to.</div>
           </div>
           <div
-            className={prefs.strictBreakModeEnabled ? styles.modeCardSelected : styles.modeCard}
+            className={mergeClasses(l.mode, strict ? l.modeOn : undefined)}
             onClick={() => setPref('strictBreakModeEnabled', true)}
           >
-            <div className={styles.modeTitle}>🔒 Strict Mode</div>
-            <div className={styles.modeSub}>Breaks cannot be skipped — enforces the full duration</div>
+            <div className={l.modeHead}>
+              <LockClosed20Regular />
+              Strict
+              {strict && <span className={l.modeCheck}><Checkmark16Filled /></span>}
+            </div>
+            <div className={l.modeDesc}>The break screen can&apos;t be dismissed early.</div>
           </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Sound */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Sound</div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>Sound Notifications</div>
-            <div className={styles.rowSub}>Play a sound when a break starts and ends</div>
-          </div>
-          <Switch
-            checked={prefs.soundEnabled}
-            onChange={(_e, d) => setPref('soundEnabled', d.checked)}
+      <Section label="Sound">
+        <Card>
+          <Row
+            first
+            icon={<Speaker220Regular />}
+            title="Break chime"
+            desc="A soft tone when a break starts and ends"
+            right={
+              <Switch
+                checked={prefs.soundEnabled}
+                onChange={(_e, d) => setPref('soundEnabled', d.checked)}
+              />
+            }
           />
-        </div>
+        </Card>
+      </Section>
+
+      <div className={u.body}>
+        iRetina follows the 20-20-20 rule — every 20 minutes, look at something about 20 feet away
+        for 20 seconds.
       </div>
-    </div>
+    </Page>
   )
 }

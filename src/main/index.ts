@@ -1,14 +1,5 @@
-import {
-  app,
-  BrowserWindow,
-  Tray,
-  Menu,
-  ipcMain,
-  nativeImage,
-  powerMonitor,
-  shell,
-  nativeTheme
-} from 'electron'
+import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen } from 'electron'
+import { existsSync } from 'fs'
 import { resolve } from 'path'
 import { store } from './preferences'
 import {
@@ -22,23 +13,50 @@ import {
   deactivateDND,
   getState,
   setStateChangeCallback,
-  onOverlayFinished,
-  startBreak
+  onOverlayFinished
 } from './break-engine'
 
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let trayPopupWindow: BrowserWindow | null = null
 
-// --- Tray icon path ---
-function getTrayIconPath() {
-  // Use a simple icon — will be replaced with real icon in production
-  return resolve(__dirname, '../../assets/tray-icon.png')
+// --- Icon resolution (falls back gracefully if an asset is missing) ---
+const ASSETS_DIR = resolve(__dirname, '../../assets')
+
+// 32×32 eye icon, embedded so the tray always has something to draw.
+const FALLBACK_ICON =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABk0lEQVR42u2Xy0rDQBiFsxBB7SWNUYhN2iqoGx+gjyYqoqCi4OOJRRQviHtXbo+eKZE0mX8yiU1KwMIHIfPPnG9m0lwcpwk/b3MbZfhD4AhVYBXe2xihShYabpSoK1yUcP0h6qR5AtH+uBCFBFx/AAnd4M7hHZaO7rF8PFHwmOf0IvLYRgFpZgxsnz7AO3uEf/6k4DHPsU1eEYNAd32AJOFPBx0rJxMVFlw8Y3j1ip3rNwWPeY5trJH6p3O0AlJnzo4B4eULdm/ecXD7gZa7peAxz7GNNay1kUgIRCBSJ+4vl5izZFAcnIZtrGEt+8gS07xfgY4XgUgdeJFxZlzqeOafX1AkBdjGGtayjzRenGctwCXlxcb9jsN0AoQ1rDVtg0YgBCkiIGEnMM2zFtBtgQ77LSgoMO+LMCPQ7oWIqfpvmMxKCPSRpKobUTpHFDBJ5N2KbcNnBFpuHxLh3jiD9DDS1ZrGnnkimgolERN542XeB/L+3/PmX0D7ZrzWDVAHxm+DhYZXLVH6W3G1E6AMjfjy/gZfj6zt5yJRzQAAAABJRU5ErkJggg=='
+
+function loadIcon(...names: string[]) {
+  for (const name of names) {
+    const p = resolve(ASSETS_DIR, name)
+    if (existsSync(p)) {
+      const img = nativeImage.createFromPath(p)
+      if (!img.isEmpty()) return img
+    }
+  }
+  return nativeImage.createFromDataURL(FALLBACK_ICON)
+}
+
+function getTrayIcon() {
+  if (process.platform === 'darwin') {
+    // Monochrome template image → macOS renders it crisp and theme-aware in the menu bar.
+    const t = loadIcon('trayTemplate.png').resize({ width: 18, height: 18 })
+    t.setTemplateImage(true)
+    return t
+  }
+  return loadIcon('tray-icon.png', 'icon.png').resize({ width: 16, height: 16 })
+}
+
+function getWindowIcon() {
+  return loadIcon('icon.png', 'logo.png', 'tray-icon.png')
 }
 
 // --- Settings window ---
 function createSettingsWindow() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (process.platform === 'darwin') app.focus({ steal: true })
+    settingsWindow.show()
     settingsWindow.focus()
     return
   }
@@ -49,6 +67,7 @@ function createSettingsWindow() {
     minWidth: 700,
     minHeight: 500,
     title: 'iRetina Settings',
+    icon: getWindowIcon(),
     show: false,
     frame: true,
     transparent: false,
@@ -72,7 +91,10 @@ function createSettingsWindow() {
   }
 
   settingsWindow.once('ready-to-show', () => {
+    // No Dock icon on macOS, so nudge the app forward or the window opens behind.
+    if (process.platform === 'darwin') app.focus({ steal: true })
     settingsWindow!.show()
+    settingsWindow!.focus()
   })
 
   settingsWindow.on('closed', () => {
@@ -88,12 +110,20 @@ function createTrayPopup() {
   }
 
   const trayBounds = tray!.getBounds()
-  const winWidth = 300
-  const winHeight = 220
+  const winWidth = 322
+  const winHeight = 384
 
-  // Position popup above the tray icon
-  const x = Math.round(trayBounds.x - winWidth / 2 + trayBounds.width / 2)
-  const y = Math.round(trayBounds.y - winHeight - 8)
+  // Anchor the popup to the tray icon, then clamp it fully on-screen.
+  // macOS puts the menu bar at the top, so the popup drops *below* the icon;
+  // on Windows the taskbar is usually at the bottom, so it floats *above* it.
+  const work = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y }).workArea
+  let x = Math.round(trayBounds.x + trayBounds.width / 2 - winWidth / 2)
+  let y =
+    process.platform === 'darwin'
+      ? Math.round(trayBounds.y + trayBounds.height + 4)
+      : Math.round(trayBounds.y - winHeight - 8)
+  x = Math.max(work.x + 8, Math.min(x, work.x + work.width - winWidth - 8))
+  y = Math.max(work.y + 8, Math.min(y, work.y + work.height - winHeight - 8))
 
   trayPopupWindow = new BrowserWindow({
     width: winWidth,
@@ -130,10 +160,12 @@ function createTrayPopup() {
   trayPopupWindow.once('ready-to-show', () => {
     trayPopupWindow!.show()
     trayPopupWindow!.focus()
-  })
-
-  trayPopupWindow.on('blur', () => {
-    closeTrayPopup()
+    // Attach the dismiss-on-blur handler only after the window has settled —
+    // a transparent frameless window can emit a spurious blur the instant it
+    // appears, which would close it before the user sees it.
+    setTimeout(() => {
+      trayPopupWindow?.on('blur', () => closeTrayPopup())
+    }, 300)
   })
 
   trayPopupWindow.on('closed', () => {
@@ -150,9 +182,7 @@ function closeTrayPopup() {
 
 // --- Setup tray ---
 function setupTray() {
-  const iconPath = getTrayIconPath()
-  const icon = nativeImage.createFromPath(iconPath)
-  tray = new Tray(icon.resize({ width: 16, height: 16 }))
+  tray = new Tray(getTrayIcon())
   tray.setToolTip('iRetina — Eye Break Reminder')
 
   tray.on('click', () => {
@@ -259,18 +289,6 @@ app.whenReady().then(() => {
   app.setAppUserModelId('com.iretina.windows')
 
   setupIPC()
-
-  // Create a fallback tray icon if no file exists (drawn at runtime)
-  const iconPath = resolve(__dirname, '../../assets/tray-icon.png')
-  const fs = require('fs')
-  if (!fs.existsSync(iconPath)) {
-    // Create a simple 16x16 PNG as a placeholder
-    // Real icon will be in assets/tray-icon.png
-    const { nativeImage } = require('electron')
-    const img = nativeImage.createEmpty()
-    // We'll skip and let it fail gracefully in dev
-  }
-
   setupTray()
   setupActivityMonitor()
 
@@ -287,16 +305,15 @@ app.whenReady().then(() => {
 
   setStateChangeCallback(() => pushStateToRenderer())
 
-  // On first launch, open settings
-  const launchCount = (store.get('breaksCompleted') as number) === 0
-  if (launchCount) {
+  // On first launch, open settings so the user can configure their schedule
+  const isFirstLaunch = (store.get('breaksCompleted') as number) === 0
+  if (isFirstLaunch) {
     createSettingsWindow()
   }
 })
 
-app.on('window-all-closed', (e: Event) => {
-  // Prevent quit when windows close — tray app stays running
-  e.preventDefault()
+app.on('window-all-closed', () => {
+  // iRetina lives in the tray — closing the settings window must not quit it.
 })
 
 app.on('before-quit', () => {

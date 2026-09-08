@@ -1,103 +1,79 @@
-import React, { useEffect, useState } from 'react'
-import {
-  makeStyles,
-  tokens,
-  Link,
-  Divider,
-  Text,
-  Switch
-} from '@fluentui/react-components'
+import { useEffect, useState } from 'react'
+import { makeStyles } from '@fluentui/react-components'
+import { OpenRegular } from '@fluentui/react-icons'
+import Logo from '../Logo'
+import { Page } from './ui'
 
-const useStyles = makeStyles({
-  root: {
-    padding: '28px 32px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-    height: '100%',
-    overflowY: 'auto'
-  },
-  pageTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: tokens.colorNeutralForeground1
-  },
-  heroCard: {
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '12px',
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    padding: '28px',
+const useLocal = makeStyles({
+  hero: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '12px',
-    textAlign: 'center'
+    textAlign: 'center',
+    gap: '10px',
+    padding: '32px 24px 28px',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: '14px'
   },
-  heroEmoji: {
-    fontSize: '52px'
+  name: { fontSize: '20px', fontWeight: '700', letterSpacing: '-0.01em', color: 'var(--text)' },
+  tagline: { fontSize: '13px', color: 'var(--text-dim)', maxWidth: '320px', lineHeight: 1.5 },
+  ver: {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: 'var(--text-mute)',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '0.02em'
   },
-  heroTitle: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: tokens.colorNeutralForeground1
-  },
-  heroSub: {
-    fontSize: '14px',
-    color: tokens.colorNeutralForeground3,
-    maxWidth: '340px',
-    lineHeight: '1.5'
-  },
-  version: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground4,
-    fontFamily: 'monospace'
-  },
-  card: {
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '12px',
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
+
+  rule: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    border: '1px solid var(--border)',
+    borderRadius: '14px',
     overflow: 'hidden'
   },
-  cardHeader: {
-    padding: '14px 20px 10px',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: tokens.colorNeutralForeground3,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`
-  },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px',
-    borderBottom: `1px solid rgba(255,255,255,0.04)`
-  },
-  rowLast: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 20px'
-  },
-  rowLeft: {
+  ruleCell: {
+    padding: '18px 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '2px'
+    alignItems: 'center',
+    gap: '4px',
+    borderLeft: '1px solid var(--border)',
+    ':first-child': { borderLeft: 'none' }
   },
-  rowTitle: {
-    fontSize: '14px',
+  ruleNum: { fontSize: '24px', fontWeight: '700', color: 'var(--accent)', letterSpacing: '-0.02em' },
+  ruleLabel: { fontSize: '11.5px', color: 'var(--text-mute)', fontWeight: '600', textAlign: 'center' },
+  ruleCopy: { fontSize: '12.5px', lineHeight: 1.6, color: 'var(--text-dim)', padding: '0 2px' },
+
+  sectionLabel: {
+    fontSize: '11px',
     fontWeight: '600',
-    color: tokens.colorNeutralForeground1
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: 'var(--text-mute)',
+    padding: '0 2px'
   },
-  rowSub: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground3
-  }
+  links: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  link: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '11px 12px',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    color: 'var(--text)',
+    fontSize: '13px',
+    fontWeight: '600',
+    transition: 'background 160ms ease',
+    ':hover': { background: 'var(--surface-2)' }
+  },
+  linkSub: { fontSize: '12px', fontWeight: '400', color: 'var(--text-mute)', flex: 1 },
+  ext: { color: 'var(--text-mute)', display: 'flex', fontSize: '14px' }
 })
 
 export default function AboutPage() {
-  const styles = useStyles()
+  const l = useLocal()
   const [version, setVersion] = useState('1.0.0')
 
   useEffect(() => {
@@ -105,44 +81,54 @@ export default function AboutPage() {
   }, [])
 
   return (
-    <div className={styles.root}>
-      <div className={styles.pageTitle}>About</div>
-
-      <div className={styles.heroCard}>
-        <div className={styles.heroEmoji}>👁</div>
-        <div className={styles.heroTitle}>iRetina for Windows</div>
-        <div className={styles.heroSub}>
-          The eye care app that reminds you to rest your eyes. Built around the 20-20-20 rule: every 20 minutes, look at something 20 feet away for 20 seconds.
+    <Page title="About">
+      <div className={l.hero}>
+        <Logo size={56} />
+        <div className={l.name}>iRetina for Windows</div>
+        <div className={l.tagline}>
+          A quiet reminder to rest your eyes, built on the doctor-recommended 20-20-20 rule.
         </div>
-        <div className={styles.version}>v{version}</div>
+        <div className={l.ver}>Version {version}</div>
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>The 20-20-20 Rule</div>
-        <div style={{ padding: '16px 20px' }}>
-          <Text size={300} style={{ color: tokens.colorNeutralForeground2, lineHeight: '1.6' }}>
-            Recommended by eye care professionals to reduce digital eye strain. Every 20 minutes of screen time, take a 20-second break and look at something at least 20 feet (6 meters) away. iRetina automates this habit for you.
-          </Text>
+      <div className={l.sectionLabel}>The 20-20-20 rule</div>
+      <div className={l.rule}>
+        <div className={l.ruleCell}>
+          <span className={l.ruleNum}>20</span>
+          <span className={l.ruleLabel}>minutes of screen time</span>
         </div>
+        <div className={l.ruleCell}>
+          <span className={l.ruleNum}>20</span>
+          <span className={l.ruleLabel}>feet away to look</span>
+        </div>
+        <div className={l.ruleCell}>
+          <span className={l.ruleNum}>20</span>
+          <span className={l.ruleLabel}>seconds to rest</span>
+        </div>
+      </div>
+      <div className={l.ruleCopy}>
+        Every 20 minutes, look at something at least 20 feet away for 20 seconds. It relaxes the
+        focusing muscles in your eyes and cuts the strain of long screen sessions. iRetina keeps the
+        habit for you and stays out of the way the rest of the time.
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>Links</div>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>GitHub</div>
-            <div className={styles.rowSub}>Source code & issue tracker</div>
-          </div>
-          <Link href="https://github.com" target="_blank">Open</Link>
-        </div>
-        <div className={styles.rowLast}>
-          <div className={styles.rowLeft}>
-            <div className={styles.rowTitle}>macOS Version</div>
-            <div className={styles.rowSub}>iRetina is also available on Mac App Store</div>
-          </div>
-          <Link href="https://apps.apple.com" target="_blank">View</Link>
-        </div>
+      <div className={l.sectionLabel}>Links</div>
+      <div className={l.links}>
+        <a className={l.link} href="https://apps.apple.com" target="_blank" rel="noreferrer">
+          iRetina for Mac
+          <span className={l.linkSub}>The original, on the Mac App Store</span>
+          <span className={l.ext}>
+            <OpenRegular />
+          </span>
+        </a>
+        <a className={l.link} href="https://iretina.app" target="_blank" rel="noreferrer">
+          iretina.app
+          <span className={l.linkSub}>Product site and support</span>
+          <span className={l.ext}>
+            <OpenRegular />
+          </span>
+        </a>
       </div>
-    </div>
+    </Page>
   )
 }

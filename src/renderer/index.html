@@ -6,12 +6,24 @@
     <title>iRetina</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { height: 100%; }
       body {
-        font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+        font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         background: transparent;
         overflow: hidden;
+        -webkit-font-smoothing: antialiased;
       }
       #root { width: 100vw; height: 100vh; }
+      ::-webkit-scrollbar { width: 12px; height: 12px; }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(140,140,150,0.35);
+        border: 3px solid transparent;
+        background-clip: content-box;
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(140,140,150,0.55); background-clip: content-box; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      button { font-family: inherit; }
     </style>
   </head>
   <body>
