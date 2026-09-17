@@ -21,9 +21,8 @@ declare global {
   }
 }
 
-const FADE_IN_MS = 360
-const FADE_OUT_MS = 400
-const CONTENT_OUT_MS = 260
+const FADE_IN_MS = 420
+const FADE_OUT_MS = 620
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
@@ -39,7 +38,7 @@ const subtitles = [
 
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
-type Phase = 'hidden' | 'running' | 'leaving'
+type Phase = 'hidden' | 'entering' | 'running' | 'leaving'
 
 function OverlayApp(): React.JSX.Element {
   const [durationSec, setDurationSec] = useState(30)
@@ -54,7 +53,8 @@ function OverlayApp(): React.JSX.Element {
   const primaryRef = useRef(true)
   const closingRef = useRef(false)
 
-  const shown = phase === 'running'
+  const visible = phase === 'running'
+  const shown = phase !== 'hidden' && phase !== 'leaving'
 
   // --- Close sequence: ding, fade out, then tell the main process ---
   const beginClose = useCallback((action: 'finished' | 'skip') => {
@@ -64,7 +64,7 @@ function OverlayApp(): React.JSX.Element {
     setPhase('leaving')
     window.setTimeout(
       () => window.overlayBridge[action](),
-      prefersReducedMotion ? 40 : FADE_OUT_MS
+      prefersReducedMotion ? 60 : FADE_OUT_MS
     )
   }, [])
 
@@ -76,13 +76,11 @@ function OverlayApp(): React.JSX.Element {
       setDurationSec(d)
       setRemaining(d)
       setStrict(s)
-      // Two frames so the browser paints the hidden state before we transition in.
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          setPhase('running')
-          if (soundEnabled && isPrimary) playBreakStart()
-        })
-      )
+      requestAnimationFrame(() => setPhase('entering'))
+      window.setTimeout(() => {
+        setPhase('running')
+        if (soundEnabled && isPrimary) playBreakStart()
+      }, prefersReducedMotion ? 30 : FADE_IN_MS)
     })
   }, [])
 
@@ -169,9 +167,7 @@ function OverlayApp(): React.JSX.Element {
         alignItems: 'center',
         justifyContent: 'center',
         opacity: shown ? 1 : 0,
-        transition: prefersReducedMotion
-          ? 'opacity 80ms linear'
-          : `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+        transition: `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         position: 'relative',
         overflow: 'hidden',
         userSelect: 'none'
@@ -181,6 +177,10 @@ function OverlayApp(): React.JSX.Element {
         @keyframes iretinaGlow {
           0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
           50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.08); }
+        }
+        @keyframes iretinaDrawIn {
+          from { opacity: 0; transform: translateY(14px) scale(0.985); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
         }
       `}</style>
 
@@ -219,7 +219,7 @@ function OverlayApp(): React.JSX.Element {
         {timeDisplay}
       </div>
 
-      {/* Main content — the root handles opacity; this only carries a gentle rise */}
+      {/* Main content */}
       <div
         style={{
           display: 'flex',
@@ -229,10 +229,10 @@ function OverlayApp(): React.JSX.Element {
           textAlign: 'center',
           maxWidth: '700px',
           padding: '0 40px',
-          transform: phase === 'running' ? 'translateY(0)' : 'translateY(12px)',
-          transition: prefersReducedMotion
-            ? 'none'
-            : `transform ${phase === 'leaving' ? CONTENT_OUT_MS : FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+          animation:
+            visible && !prefersReducedMotion
+              ? `iretinaDrawIn ${FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both`
+              : 'none'
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
