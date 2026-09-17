@@ -46,62 +46,63 @@ const useStyles = makeStyles({
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
   },
   rail: {
-    width: '212px',
+    width: '256px',
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    padding: '18px 12px',
+    padding: '16px 8px 12px',
     boxSizing: 'border-box',
     gap: '2px'
   },
   brand: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '6px 10px 18px'
+    gap: '12px',
+    padding: '4px 12px 16px'
   },
-  brandName: { fontSize: '15px', fontWeight: '600', letterSpacing: '-0.01em' },
+  brandName: { fontSize: '14px', fontWeight: '600', letterSpacing: '-0.005em' },
   navItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '11px',
-    padding: '8px 11px',
-    borderRadius: '8px',
+    gap: '14px',
+    padding: '0 12px',
+    height: '38px',
+    borderRadius: '5px',
     border: '1px solid transparent',
     background: 'transparent',
-    color: 'var(--text-dim)',
+    color: 'var(--text)',
     fontFamily: 'inherit',
-    fontSize: '13px',
-    fontWeight: '600',
+    fontSize: '14px',
+    fontWeight: '400',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
     position: 'relative',
-    transition: 'background 160ms ease, color 160ms ease',
-    ':hover': { background: 'var(--surface-2)', color: 'var(--text)' },
+    transition: 'background 100ms ease',
+    ':hover': { background: 'var(--surface-hover)' },
     ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '-2px' }
   },
   navItemOn: {
-    background: 'var(--accent-soft)',
-    color: 'var(--accent)',
-    ':hover': { background: 'var(--accent-soft)', color: 'var(--accent)' }
+    background: 'var(--surface-2)',
+    fontWeight: '600',
+    ':hover': { background: 'var(--surface-hover)' }
   },
+  // Win11 NavigationView selection pill — a short rounded bar on the left edge.
   navBar: {
     position: 'absolute',
-    left: '-12px',
-    top: '8px',
-    bottom: '8px',
+    left: '0',
+    top: '9px',
+    bottom: '9px',
     width: '3px',
-    borderRadius: '0 3px 3px 0',
+    borderRadius: '3px',
     background: 'var(--accent)'
   },
-  navIcon: { fontSize: '18px', display: 'flex', flexShrink: 0 },
+  navIcon: { fontSize: '16px', display: 'flex', flexShrink: 0, color: 'var(--text-dim)' },
   content: {
     flex: 1,
     minWidth: 0,
     overflowY: 'auto',
-    background: 'var(--bg)',
-    borderLeft: '1px solid var(--border)'
+    background: 'transparent'
   }
 })
 
@@ -130,6 +131,8 @@ declare global {
         quit: () => Promise<void>
         setLoginItem: (enabled: boolean) => Promise<void>
         getVersion: () => Promise<string>
+        completeOnboarding: () => Promise<void>
+        setPlan: (plan: 'free' | 'pro') => Promise<void>
       }
     }
   }

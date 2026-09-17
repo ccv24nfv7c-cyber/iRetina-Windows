@@ -2,10 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { FluentProvider, webDarkTheme, webLightTheme } from '@fluentui/react-components'
 import App from './App'
+import Onboarding from './Onboarding'
 import { THEME_EVENT } from './theme-events'
 import { themeVars, type Scheme } from './theme'
 
-const isPopup = new URLSearchParams(window.location.search).get('popup') === '1'
+const params = new URLSearchParams(window.location.search)
+const isPopup = params.get('popup') === '1'
+const isOnboarding = params.get('onboarding') === '1'
 type ThemePref = 'system' | 'light' | 'dark'
 
 function useScheme(): Scheme {
@@ -59,7 +62,7 @@ function Root() {
       theme={scheme === 'dark' ? webDarkTheme : webLightTheme}
       style={{ height: '100%', background: 'transparent', colorScheme: scheme }}
     >
-      <App isPopup={isPopup} />
+      {isOnboarding ? <Onboarding /> : <App isPopup={isPopup} />}
     </FluentProvider>
   )
 }

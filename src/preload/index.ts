@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('iretina', {
     closePopup: () => ipcRenderer.invoke('app:closePopup'),
     quit: () => ipcRenderer.invoke('app:quit'),
     setLoginItem: (enabled: boolean) => ipcRenderer.invoke('app:setLoginItem', enabled),
-    getVersion: () => ipcRenderer.invoke('app:getVersion')
+    getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    completeOnboarding: () => ipcRenderer.invoke('app:completeOnboarding'),
+    setPlan: (plan: 'free' | 'pro') => ipcRenderer.invoke('app:setPlan', plan)
   }
 })

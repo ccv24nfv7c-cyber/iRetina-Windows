@@ -19,6 +19,7 @@ import {
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let trayPopupWindow: BrowserWindow | null = null
+let onboardingWindow: BrowserWindow | null = null
 
 // --- Icon resolution (falls back gracefully if an asset is missing) ---
 const ASSETS_DIR = resolve(__dirname, '../../assets')
@@ -99,6 +100,56 @@ function createSettingsWindow() {
 
   settingsWindow.on('closed', () => {
     settingsWindow = null
+  })
+}
+
+// --- Onboarding window (first-run guided setup) ---
+function createOnboardingWindow() {
+  if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+    if (process.platform === 'darwin') app.focus({ steal: true })
+    onboardingWindow.show()
+    onboardingWindow.focus()
+    return
+  }
+
+  onboardingWindow = new BrowserWindow({
+    width: 720,
+    height: 640,
+    resizable: false,
+    maximizable: false,
+    title: 'Welcome to iRetina',
+    icon: getWindowIcon(),
+    show: false,
+    frame: true,
+    transparent: false,
+    webPreferences: {
+      preload: resolve(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  })
+
+  // Windows 11 Mica material
+  if (process.platform === 'win32') {
+    onboardingWindow.setBackgroundMaterial('mica')
+  }
+
+  const query = { onboarding: '1' }
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    onboardingWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '?onboarding=1')
+  } else {
+    onboardingWindow.loadFile(resolve(__dirname, '../renderer/index.html'), { query })
+  }
+
+  onboardingWindow.once('ready-to-show', () => {
+    if (process.platform === 'darwin') app.focus({ steal: true })
+    onboardingWindow!.show()
+    onboardingWindow!.focus()
+  })
+
+  onboardingWindow.on('closed', () => {
+    onboardingWindow = null
   })
 }
 
@@ -231,6 +282,18 @@ function setupIPC() {
   ipcMain.handle('app:closePopup', () => closeTrayPopup())
   ipcMain.handle('app:quit', () => app.quit())
 
+  ipcMain.handle('app:completeOnboarding', () => {
+    store.set('onboardingComplete', true)
+    if (onboardingWindow && !onboardingWindow.isDestroyed()) onboardingWindow.close()
+    onboardingWindow = null
+    // Drop the user straight into the main window so setup feels continuous.
+    createSettingsWindow()
+  })
+
+  ipcMain.handle('app:setPlan', (_e, plan: 'free' | 'pro') => {
+    store.set('plan', plan === 'pro' ? 'pro' : 'free')
+  })
+
   ipcMain.handle('app:setLoginItem', (_e, enabled: boolean) => {
     app.setLoginItemSettings({ openAtLogin: enabled })
     store.set('launchAtLogin', enabled)
@@ -305,10 +368,9 @@ app.whenReady().then(() => {
 
   setStateChangeCallback(() => pushStateToRenderer())
 
-  // On first launch, open settings so the user can configure their schedule
-  const isFirstLaunch = (store.get('breaksCompleted') as number) === 0
-  if (isFirstLaunch) {
-    createSettingsWindow()
+  // First run → guided onboarding; afterwards the app lives quietly in the tray.
+  if (!store.get('onboardingComplete')) {
+    createOnboardingWindow()
   }
 })
 

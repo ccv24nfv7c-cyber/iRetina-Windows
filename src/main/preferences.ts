@@ -13,6 +13,8 @@ interface Schema {
   dndDefaultDurationHours: number
   breaksCompleted: number
   analyticsEnabled: boolean
+  onboardingComplete: boolean
+  plan: 'free' | 'pro'
 }
 
 const defaults: Schema = {
@@ -27,7 +29,9 @@ const defaults: Schema = {
   dndEndTime: null,
   dndDefaultDurationHours: 2.5,
   breaksCompleted: 0,
-  analyticsEnabled: false
+  analyticsEnabled: false,
+  onboardingComplete: false,
+  plan: 'free'
 }
 
 export const store = new Store<Schema>({ defaults })
