@@ -190,11 +190,12 @@ export function deactivateDND() {
 async function captureScreens(): Promise<Record<string, string>> {
   const shots: Record<string, string> = {}
   try {
-    // Downscaled snapshot per screen; the heavy blur in the overlay hides the
-    // loss of detail while keeping this cheap.
+    // Capture a TINY snapshot per screen. Upscaling this small image to fill the
+    // display is what produces the frosted-glass blur - almost free on the GPU,
+    // unlike a large CSS blur() filter which can lag the whole machine.
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
-      thumbnailSize: { width: 1600, height: 1000 }
+      thumbnailSize: { width: 384, height: 240 }
     })
     for (const src of sources) {
       if (src.display_id && !src.thumbnail.isEmpty()) {

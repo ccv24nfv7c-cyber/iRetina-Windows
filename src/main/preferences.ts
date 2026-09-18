@@ -15,6 +15,8 @@ interface Schema {
   analyticsEnabled: boolean
   onboardingComplete: boolean
   plan: 'free' | 'pro'
+  referralSource: string
+  accountEmail: string
 }
 
 const defaults: Schema = {
@@ -31,7 +33,9 @@ const defaults: Schema = {
   breaksCompleted: 0,
   analyticsEnabled: false,
   onboardingComplete: false,
-  plan: 'free'
+  plan: 'free',
+  referralSource: '',
+  accountEmail: ''
 }
 
 export const store = new Store<Schema>({ defaults })

@@ -182,7 +182,10 @@ function OverlayApp(): React.JSX.Element {
         userSelect: 'none'
       }}
     >
-      {/* Frosted snapshot of the user's own screen, heavily blurred + dimmed. */}
+      {/* Frosted snapshot of the user's own screen. The source image is tiny
+          (see break-engine) so the browser's upscaling does the blurring for
+          free; only a small filter blur is added to smooth it. This avoids the
+          heavy GPU cost of a large blur() on a full-resolution image. */}
       {screenshot && (
         <div
           style={{
@@ -191,8 +194,8 @@ function OverlayApp(): React.JSX.Element {
             backgroundImage: `url(${screenshot})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(32px) saturate(1.15)',
-            transform: 'scale(1.12)',
+            filter: 'blur(8px) saturate(1.1)',
+            transform: 'scale(1.05)',
             pointerEvents: 'none'
           }}
         />

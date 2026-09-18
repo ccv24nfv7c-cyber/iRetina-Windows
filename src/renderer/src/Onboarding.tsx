@@ -7,7 +7,10 @@ import {
   Checkmark12Filled,
   Sparkle20Filled,
   ChevronRight16Regular,
-  ChevronLeft16Regular
+  ChevronLeft16Regular,
+  Megaphone24Regular,
+  Mail24Regular,
+  Play16Filled
 } from '@fluentui/react-icons'
 import Logo from './Logo'
 import { DUR, EASE } from './motion'
@@ -141,6 +144,78 @@ const useStyles = makeStyles({
     marginTop: '3px'
   },
 
+  // Secondary "Try a break" button used inside a step body.
+  tryBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginTop: '24px',
+    height: '38px',
+    padding: '0 20px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-strong)',
+    background: 'var(--surface)',
+    color: 'var(--text)',
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: 'var(--shadow-sm)',
+    transition: `background ${DUR.fast}ms ${EASE.standard}, transform ${DUR.faster}ms ${EASE.standard}`,
+    ':hover': { background: 'var(--surface-hover)' },
+    ':active': { transform: 'scale(0.97)' }
+  },
+
+  // Referral / sign-in
+  optList: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '360px', marginTop: '26px' },
+  optItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '11px',
+    padding: '13px 16px',
+    borderRadius: '9px',
+    border: '1px solid var(--border-strong)',
+    background: 'var(--surface)',
+    color: 'var(--text)',
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: `background ${DUR.fast}ms ${EASE.standard}, border-color ${DUR.fast}ms ${EASE.standard}`,
+    ':hover': { background: 'var(--surface-hover)' }
+  },
+  optItemOn: { border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)' },
+  optRadio: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '50%',
+    border: '2px solid var(--border-strong)',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  optRadioOn: { border: '2px solid var(--accent)' },
+  optDot: { width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' },
+  input: {
+    width: '100%',
+    maxWidth: '360px',
+    marginTop: '24px',
+    height: '44px',
+    padding: '0 14px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-strong)',
+    background: 'var(--surface)',
+    color: 'var(--text)',
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    boxSizing: 'border-box',
+    outline: 'none',
+    ':focus': { border: '1px solid var(--accent)' }
+  },
+  note: { fontSize: '11.5px', color: 'var(--text-mute)', marginTop: '12px', maxWidth: '360px', lineHeight: 1.5 },
+
   // Paywall — a single self-contained plan card.
   proPill: {
     display: 'inline-flex',
@@ -271,7 +346,8 @@ const PERKS = [
   'Break history & eye-health insights',
   'Priority support and future updates'
 ]
-const TOTAL = 5
+const REFERRALS = ['TikTok', 'X (Twitter)', 'Google', 'Posters', 'Other']
+const TOTAL = 7
 
 export default function Onboarding() {
   const s = useStyles()
@@ -280,6 +356,8 @@ export default function Onboarding() {
   const [interval, setInterval] = useState(20)
   const [duration, setDuration] = useState(30)
   const [launch, setLaunch] = useState(true)
+  const [referral, setReferral] = useState('')
+  const [email, setEmail] = useState('')
   const firstRender = useRef(true)
 
   // Persist the schedule choices as they're made, so nothing is lost on skip.
@@ -296,8 +374,15 @@ export default function Onboarding() {
   async function finish(plan: 'free' | 'pro') {
     await window.iretina.app.setLoginItem(launch)
     await window.iretina.prefs.set('launchAtLogin', launch)
+    await window.iretina.prefs.set('referralSource', referral)
+    await window.iretina.prefs.set('accountEmail', email.trim())
     await window.iretina.app.setPlan(plan)
     await window.iretina.app.completeOnboarding()
+  }
+
+  // Let the user preview a real break from onboarding.
+  function tryBreak() {
+    window.iretina.engine.triggerNow()
   }
 
   function go(to: number) {
@@ -342,6 +427,9 @@ export default function Onboarding() {
                 seconds. It relaxes the focusing muscles in your eyes and eases the
                 strain of staring at a screen. iRetina keeps that rhythm for you.
               </div>
+              <button className={s.tryBtn} style={rise(3)} onClick={tryBreak}>
+                <Play16Filled /> Try a break now
+              </button>
             </>
           )}
 
@@ -394,6 +482,57 @@ export default function Onboarding() {
 
           {step === 3 && (
             <>
+              <div className={s.glyph} style={rise(0)}><Megaphone24Regular /></div>
+              <div className={s.title} style={rise(1)}>Where did you hear about us?</div>
+              <div className={s.lede} style={rise(2)}>
+                It helps us know where to focus. Totally optional.
+              </div>
+              <div className={s.optList} style={rise(3)}>
+                {REFERRALS.map((r) => {
+                  const on = referral === r
+                  return (
+                    <button
+                      key={r}
+                      className={`${s.optItem} ${on ? s.optItemOn : ''}`}
+                      onClick={() => setReferral(r)}
+                    >
+                      <span className={`${s.optRadio} ${on ? s.optRadioOn : ''}`}>
+                        {on && <span className={s.optDot} />}
+                      </span>
+                      {r}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {step === 4 && (
+            <>
+              <div className={s.glyph} style={rise(0)}><Mail24Regular /></div>
+              <div className={s.title} style={rise(1)}>Create your account</div>
+              <div className={s.lede} style={rise(2)}>
+                Sign in so your iRetina Pro plan and settings follow you to any
+                device. You can also do this later.
+              </div>
+              <input
+                className={s.input}
+                style={rise(3)}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <div className={s.note} style={rise(4)}>
+                We’ll only use this to secure your account and restore purchases.
+              </div>
+            </>
+          )}
+
+          {step === 5 && (
+            <>
               <div className={s.glyph} style={rise(0)}><Power24Regular /></div>
               <div className={s.title} style={rise(1)}>Always ready</div>
               <div className={s.lede} style={rise(2)}>
@@ -413,7 +552,7 @@ export default function Onboarding() {
             </>
           )}
 
-          {step === 4 && (
+          {step === 6 && (
             <>
               <div className={s.proPill} style={rise(0)}>
                 <Sparkle20Filled style={{ fontSize: 13 }} /> iRetina Pro
