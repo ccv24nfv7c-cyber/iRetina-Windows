@@ -93,7 +93,7 @@ export default function AppearancePage({
 
   return (
     <Page title="Appearance" subtitle="How iRetina looks on your screen">
-      <Section label="Theme">
+      <Section label="Theme" index={1}>
         <div className={l.grid}>
           {OPTIONS.map((o) => {
             const on = prefs.theme === o.value
@@ -129,7 +129,7 @@ export default function AppearancePage({
         </div>
       </Section>
 
-      <Section label="Break screen">
+      <Section label="Break screen" index={2}>
         <div className={l.preview}>
           <Ring size={64} stroke={5} progress={0.68}>
             <span className={l.ringMini}>0:07</span>

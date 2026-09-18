@@ -1,5 +1,6 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import { makeStyles, mergeClasses } from '@fluentui/react-components'
+import { DUR, EASE, stagger } from '../motion'
 
 /** Restrained, native-feeling primitives. Solid surfaces, one accent, 8px rhythm. */
 export const useUi = makeStyles({
@@ -126,7 +127,7 @@ export function Page({
   const s = useUi()
   return (
     <div className={s.page}>
-      <div className={s.head}>
+      <div className={s.head} style={rise(0)}>
         <div className={s.title}>{title}</div>
         {subtitle && <div className={s.subtitle}>{subtitle}</div>}
       </div>
@@ -135,19 +136,38 @@ export function Page({
   )
 }
 
-export function Section({ label, children }: { label?: string; children: ReactNode }) {
+/** Decelerated rise-in entrance, staggered by position for a lively cascade. */
+function rise(index: number): CSSProperties {
+  return {
+    animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} ${stagger(index)}ms both`
+  }
+}
+
+export function Section({
+  label,
+  index = 0,
+  children
+}: {
+  label?: string
+  index?: number
+  children: ReactNode
+}) {
   const s = useUi()
   return (
-    <div className={s.section}>
+    <div className={s.section} style={rise(index)}>
       {label && <div className={s.sectionLabel}>{label}</div>}
       {children}
     </div>
   )
 }
 
-export function Card({ children }: { children: ReactNode }) {
+export function Card({ children, index }: { children: ReactNode; index?: number }) {
   const s = useUi()
-  return <div className={s.card}>{children}</div>
+  return (
+    <div className={s.card} style={index != null ? rise(index) : undefined}>
+      {children}
+    </div>
+  )
 }
 
 export function Row({

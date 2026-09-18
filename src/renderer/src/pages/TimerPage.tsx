@@ -65,7 +65,7 @@ export default function TimerPage({
 
   return (
     <Page title="Break Timer" subtitle="Tune the rhythm of your breaks">
-      <Section label="Schedule">
+      <Section label="Schedule" index={1}>
         <Card>
           <Row
             first
@@ -102,7 +102,7 @@ export default function TimerPage({
         </Card>
       </Section>
 
-      <Section label="Before a break">
+      <Section label="Before a break" index={2}>
         <Card>
           <Row
             first
@@ -119,7 +119,7 @@ export default function TimerPage({
         </Card>
       </Section>
 
-      <Section label="Break mode">
+      <Section label="Break mode" index={3}>
         <div className={l.modes}>
           <div
             className={mergeClasses(l.mode, !strict ? l.modeOn : undefined)}
@@ -145,7 +145,7 @@ export default function TimerPage({
         </div>
       </Section>
 
-      <Section label="Sound">
+      <Section label="Sound" index={4}>
         <Card>
           <Row
             first

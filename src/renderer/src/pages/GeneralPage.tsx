@@ -9,6 +9,7 @@ import {
 } from '@fluentui/react-icons'
 import type { Prefs, EngineState } from '../App'
 import Ring from '../Ring'
+import { DUR, EASE } from '../motion'
 import { Page, Section, Card, Row, Btn } from './ui'
 
 const useLocal = makeStyles({
@@ -144,8 +145,14 @@ export default function GeneralPage({
 
   return (
     <Page title="Dashboard">
-      <div className={l.hero}>
-        <div className={l.ringWrap}>
+      <div
+        className={l.hero}
+        style={{ animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} 60ms both` }}
+      >
+        <div
+          className={l.ringWrap}
+          style={{ animation: `winPopIn ${DUR.slow}ms ${EASE.decel} 140ms both` }}
+        >
           <Ring size={220} stroke={12} progress={ringProgress} dim={engineState.isPaused}>
             {center}
           </Ring>
@@ -166,21 +173,21 @@ export default function GeneralPage({
       </div>
 
       <div className={l.stats}>
-        <div className={l.stat}>
+        <div className={l.stat} style={{ animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} 150ms both` }}>
           <span className={l.statNum}>{engineState.breaksCompleted}</span>
           <span className={l.statLabel}>Breaks completed</span>
         </div>
-        <div className={l.stat}>
+        <div className={l.stat} style={{ animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} 195ms both` }}>
           <span className={l.statNum}>{prefs.intervalMinutes}<span style={{ fontSize: 13, color: 'var(--text-mute)' }}> min</span></span>
           <span className={l.statLabel}>Between breaks</span>
         </div>
-        <div className={l.stat}>
+        <div className={l.stat} style={{ animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} 240ms both` }}>
           <span className={l.statNum}>{prefs.breakDurationSec}<span style={{ fontSize: 13, color: 'var(--text-mute)' }}> s</span></span>
           <span className={l.statLabel}>Break length</span>
         </div>
       </div>
 
-      <Section label="Do Not Disturb">
+      <Section label="Do Not Disturb" index={6}>
         <Card>
           <Row
             first
@@ -208,7 +215,7 @@ export default function GeneralPage({
         </Card>
       </Section>
 
-      <Section label="Automation">
+      <Section label="Automation" index={7}>
         <Card>
           <Row
             first

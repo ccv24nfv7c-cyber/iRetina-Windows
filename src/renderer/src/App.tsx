@@ -7,6 +7,7 @@ import {
   Info20Regular
 } from '@fluentui/react-icons'
 import Logo from './Logo'
+import { DUR, EASE } from './motion'
 import GeneralPage from './pages/GeneralPage'
 import TimerPage from './pages/TimerPage'
 import AppearancePage from './pages/AppearancePage'
@@ -192,7 +193,12 @@ export default function App({ isPopup }: { isPopup: boolean }) {
             aria-current={tab === n.id ? 'page' : undefined}
             onClick={() => setTab(n.id)}
           >
-            {tab === n.id && <span className={s.navBar} />}
+            {tab === n.id && (
+              <span
+                className={s.navBar}
+                style={{ animation: `winPopIn ${DUR.normal}ms ${EASE.decel} both` }}
+              />
+            )}
             <span className={s.navIcon}>{n.icon}</span>
             {n.label}
           </button>
@@ -200,17 +206,24 @@ export default function App({ isPopup }: { isPopup: boolean }) {
       </div>
 
       <div className={s.content}>
-        {tab === 'home' && (
-          <GeneralPage
-            prefs={prefs}
-            engineState={engineState}
-            setPref={setPref}
-            refresh={refreshAll}
-          />
-        )}
-        {tab === 'timer' && <TimerPage prefs={prefs} setPref={setPref} />}
-        {tab === 'appearance' && <AppearancePage prefs={prefs} setPref={setPref} />}
-        {tab === 'about' && <AboutPage />}
+        {/* Keyed wrapper re-mounts per tab → Win11 top-level page transition
+            (rise up + fade in). */}
+        <div
+          key={tab}
+          style={{ animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} both`, height: '100%' }}
+        >
+          {tab === 'home' && (
+            <GeneralPage
+              prefs={prefs}
+              engineState={engineState}
+              setPref={setPref}
+              refresh={refreshAll}
+            />
+          )}
+          {tab === 'timer' && <TimerPage prefs={prefs} setPref={setPref} />}
+          {tab === 'appearance' && <AppearancePage prefs={prefs} setPref={setPref} />}
+          {tab === 'about' && <AboutPage />}
+        </div>
       </div>
     </div>
   )

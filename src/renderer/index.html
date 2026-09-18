@@ -24,6 +24,50 @@
       ::-webkit-scrollbar-thumb:hover { background: rgba(140,140,150,0.55); background-clip: content-box; }
       ::-webkit-scrollbar-track { background: transparent; }
       button { font-family: inherit; }
+
+      /* ---- Windows 11 Fluent motion keyframes (see motion.ts) ---- */
+      /* Direct entrance: fast-out/slow-in, rises into place + fades in. */
+      @keyframes winFadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes winFadeDown {
+        from { opacity: 0; transform: translateY(-14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes winFadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      /* Connected-ish reveal: scale up slightly while fading in. */
+      @keyframes winScaleIn {
+        from { opacity: 0; transform: scale(0.94); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+      /* Page transition: slide in from the right (forward nav). */
+      @keyframes winSlideInRight {
+        from { opacity: 0; transform: translateX(36px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+      /* Page transition: slide in from the left (backward nav). */
+      @keyframes winSlideInLeft {
+        from { opacity: 0; transform: translateX(-36px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+      /* Ring / accent draw-in flourish. */
+      @keyframes winPopIn {
+        0%   { opacity: 0; transform: scale(0.86); }
+        60%  { opacity: 1; }
+        100% { opacity: 1; transform: scale(1); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
     </style>
   </head>
   <body>

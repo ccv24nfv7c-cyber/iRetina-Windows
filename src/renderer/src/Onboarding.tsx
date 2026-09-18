@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { makeStyles, Switch } from '@fluentui/react-components'
 import {
   Eye24Regular,
   Timer24Regular,
   Power24Regular,
-  Checkmark20Filled,
-  Sparkle24Filled,
+  Checkmark12Filled,
+  Sparkle20Filled,
   ChevronRight16Regular,
   ChevronLeft16Regular
 } from '@fluentui/react-icons'
 import Logo from './Logo'
+import { DUR, EASE } from './motion'
 
 const useStyles = makeStyles({
   root: {
@@ -17,82 +18,91 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     color: 'var(--text)',
+    overflow: 'hidden',
     fontFamily:
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
   },
-  // Content region grows; footer stays pinned so the primary button never moves.
+  // Ambient accent glow behind the content — subtle depth, very Win11.
+  glowField: {
+    position: 'absolute',
+    top: '-160px',
+    left: '50%',
+    width: '520px',
+    height: '520px',
+    transform: 'translateX(-50%)',
+    borderRadius: '50%',
+    background:
+      'radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 68%)',
+    pointerEvents: 'none',
+    filter: 'blur(8px)'
+  },
   body: {
     flex: 1,
     minHeight: 0,
-    overflowY: 'auto',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  // Each step is absolutely stacked so the outgoing/incoming steps can animate.
+  step: {
+    position: 'absolute',
+    inset: 0,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '40px 56px 24px',
-    textAlign: 'center'
+    padding: '44px 64px 20px',
+    textAlign: 'center',
+    boxSizing: 'border-box'
   },
   glyph: {
-    width: '72px',
-    height: '72px',
-    borderRadius: '18px',
+    width: '84px',
+    height: '84px',
+    borderRadius: '22px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '34px',
+    fontSize: '38px',
     color: 'var(--accent)',
     background: 'var(--accent-soft)',
-    marginBottom: '24px'
+    border: '1px solid var(--border)',
+    boxShadow: 'var(--shadow-sm)',
+    marginBottom: '26px'
   },
   title: {
-    fontSize: '28px',
-    fontWeight: '600',
+    fontSize: '30px',
+    fontWeight: '650',
     letterSpacing: '-0.02em',
-    lineHeight: 1.15,
-    marginBottom: '10px'
+    lineHeight: 1.12,
+    marginBottom: '12px'
   },
   lede: {
-    fontSize: '14px',
+    fontSize: '14.5px',
     lineHeight: 1.6,
     color: 'var(--text-dim)',
-    maxWidth: '440px'
+    maxWidth: '430px'
   },
-  // Reusable settings card (mirrors the main window's Win11 card rows).
   card: {
-    marginTop: '28px',
+    marginTop: '30px',
     width: '100%',
-    maxWidth: '460px',
+    maxWidth: '440px',
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '8px',
+    borderRadius: '10px',
+    boxShadow: 'var(--shadow-sm)',
     overflow: 'hidden',
     textAlign: 'left'
   },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-    padding: '16px 18px'
-  },
+  row: { display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 20px' },
   rowDivider: { borderTop: '1px solid var(--border)' },
-  rowIcon: { fontSize: '20px', color: 'var(--text-dim)', display: 'flex', flexShrink: 0 },
-  rowText: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0 },
+  rowIcon: { fontSize: '22px', color: 'var(--accent)', display: 'flex', flexShrink: 0 },
+  rowText: { display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 },
   rowTitle: { fontSize: '14px', fontWeight: '600' },
   rowDesc: { fontSize: '12px', color: 'var(--text-mute)', lineHeight: 1.4 },
-  stepper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginTop: '20px'
-  },
-  seg: {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '8px'
-  },
+  fieldLabel: { fontSize: '13px', fontWeight: '600', marginBottom: '10px' },
+  seg: { display: 'flex', gap: '8px' },
   choice: {
     flex: 1,
-    padding: '14px 10px',
+    padding: '12px 8px',
     borderRadius: '8px',
     border: '1px solid var(--border-strong)',
     background: 'var(--surface-2)',
@@ -101,34 +111,68 @@ const useStyles = makeStyles({
     fontSize: '15px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background 120ms ease, border-color 120ms ease',
-    ':hover': { background: 'var(--surface-hover)' }
+    transition: `background ${DUR.fast}ms ${EASE.standard}, border-color ${DUR.fast}ms ${EASE.standard}, transform ${DUR.faster}ms ${EASE.standard}`,
+    ':hover': { background: 'var(--surface-hover)' },
+    ':active': { transform: 'scale(0.97)' }
   },
   choiceOn: {
-    borderColor: 'var(--accent)',
+    border: '1px solid var(--accent)',
     background: 'var(--accent-soft)',
     color: 'var(--accent)'
   },
-  choiceSub: { display: 'block', fontSize: '11px', fontWeight: '400', color: 'var(--text-mute)', marginTop: '2px' },
+  choiceSub: {
+    display: 'block',
+    fontSize: '11px',
+    fontWeight: '400',
+    color: 'var(--text-mute)',
+    marginTop: '3px'
+  },
 
   // Paywall
-  price: { fontSize: '40px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
+  price: { display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '22px' },
+  priceNum: { fontSize: '44px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
   pricePer: { fontSize: '14px', fontWeight: '400', color: 'var(--text-mute)' },
-  perks: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '22px', maxWidth: '380px', width: '100%', textAlign: 'left' },
+  perks: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '13px',
+    marginTop: '24px',
+    maxWidth: '360px',
+    width: '100%',
+    textAlign: 'left'
+  },
   perk: { display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px' },
-  perkCheck: { color: 'var(--good)', display: 'flex', flexShrink: 0 },
+  perkCheck: {
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    background: 'var(--accent)',
+    color: 'var(--on-accent)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    fontSize: '11px'
+  },
 
   footer: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px 24px',
+    padding: '18px 26px',
     borderTop: '1px solid var(--border)',
+    background: 'var(--surface-2)',
     gap: '12px'
   },
   dots: { display: 'flex', gap: '7px' },
-  dot: { width: '7px', height: '7px', borderRadius: '50%', background: 'var(--border-strong)' },
-  dotOn: { background: 'var(--accent)', width: '20px', borderRadius: '4px' },
+  dot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    background: 'var(--border-strong)',
+    transition: `width ${DUR.normal}ms ${EASE.decel}, background ${DUR.normal}ms ${EASE.decel}`
+  },
+  dotOn: { background: 'var(--accent)', width: '22px', borderRadius: '4px' },
   footerRight: { display: 'flex', alignItems: 'center', gap: '8px' },
 
   btn: {
@@ -136,24 +180,26 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    height: '34px',
-    padding: '0 18px',
-    borderRadius: '5px',
+    height: '36px',
+    padding: '0 20px',
+    borderRadius: '6px',
     border: '1px solid transparent',
     fontFamily: 'inherit',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background 120ms ease, border-color 120ms ease',
+    transition: `background ${DUR.fast}ms ${EASE.standard}, border-color ${DUR.fast}ms ${EASE.standard}, transform ${DUR.faster}ms ${EASE.standard}`,
+    ':active': { transform: 'scale(0.97)' },
     ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '2px' }
   },
   btnPrimary: {
     background: 'var(--accent)',
     color: 'var(--on-accent)',
+    boxShadow: 'var(--shadow-sm)',
     ':hover': { background: 'var(--accent-hover)' }
   },
   btnGhost: {
-    background: 'var(--surface-2)',
+    background: 'var(--surface)',
     color: 'var(--text)',
     border: '1px solid var(--border-strong)',
     ':hover': { background: 'var(--surface-hover)' }
@@ -175,21 +221,22 @@ const DURATIONS = [
   { v: 30, label: '30 sec', sub: 'Recommended' },
   { v: 60, label: '60 sec', sub: 'Full reset' }
 ]
-
 const PERKS = [
   'Unlimited custom break schedules',
   'Strict mode & focus presets',
   'Break history & eye-health insights',
   'Priority support and future updates'
 ]
+const TOTAL = 5
 
 export default function Onboarding() {
   const s = useStyles()
   const [step, setStep] = useState(0)
+  const [dir, setDir] = useState<1 | -1>(1)
   const [interval, setInterval] = useState(20)
   const [duration, setDuration] = useState(30)
   const [launch, setLaunch] = useState(true)
-  const total = 5
+  const firstRender = useRef(true)
 
   // Persist the schedule choices as they're made, so nothing is lost on skip.
   useEffect(() => {
@@ -198,6 +245,9 @@ export default function Onboarding() {
   useEffect(() => {
     window.iretina.prefs.set('breakDurationSec', duration)
   }, [duration])
+  useEffect(() => {
+    firstRender.current = false
+  }, [])
 
   async function finish(plan: 'free' | 'pro') {
     await window.iretina.app.setLoginItem(launch)
@@ -206,155 +256,170 @@ export default function Onboarding() {
     await window.iretina.app.completeOnboarding()
   }
 
-  const next = () => setStep((n) => Math.min(total - 1, n + 1))
-  const back = () => setStep((n) => Math.max(0, n - 1))
+  function go(to: number) {
+    setDir(to > step ? 1 : -1)
+    setStep(Math.max(0, Math.min(TOTAL - 1, to)))
+  }
+
+  // Incoming step slides from the right on forward nav, left on back nav.
+  const stepAnim = firstRender.current
+    ? `winFadeIn ${DUR.normal}ms ${EASE.decel} both`
+    : `${dir === 1 ? 'winSlideInRight' : 'winSlideInLeft'} ${DUR.normal}ms ${EASE.decel} both`
+
+  // Stagger the glyph/title/lede for a lively but quick entrance.
+  const rise = (i: number): React.CSSProperties => ({
+    animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} ${80 + i * 55}ms both`
+  })
 
   return (
     <div className={s.root}>
       <div className={s.body}>
-        {step === 0 && (
-          <>
-            <div className={s.glyph} style={{ background: 'transparent' }}>
-              <Logo size={72} />
-            </div>
-            <div className={s.title}>Welcome to iRetina</div>
-            <div className={s.lede}>
-              Gentle, well-timed reminders to rest your eyes — so long screen days
-              feel a little easier. Let’s get you set up in a few quick steps.
-            </div>
-          </>
-        )}
+        <div className={s.glowField} />
+        <div key={step} className={s.step} style={{ animation: stepAnim }}>
+          {step === 0 && (
+            <>
+              <div style={rise(0)}>
+                <Logo size={88} style={{ marginBottom: 26 }} />
+              </div>
+              <div className={s.title} style={rise(1)}>Welcome to iRetina</div>
+              <div className={s.lede} style={rise(2)}>
+                Gentle, well-timed reminders to rest your eyes — so long screen
+                days feel a little easier. Let’s get you set up in a few quick steps.
+              </div>
+            </>
+          )}
 
-        {step === 1 && (
-          <>
-            <div className={s.glyph}>
-              <Eye24Regular />
-            </div>
-            <div className={s.title}>The 20-20-20 rule</div>
-            <div className={s.lede}>
-              Every 20 minutes, look at something about 20 feet away for 20 seconds.
-              It relaxes the focusing muscles in your eyes and eases the strain of
-              staring at a screen. iRetina quietly keeps that rhythm for you.
-            </div>
-          </>
-        )}
+          {step === 1 && (
+            <>
+              <div className={s.glyph} style={rise(0)}><Eye24Regular /></div>
+              <div className={s.title} style={rise(1)}>The 20-20-20 rule</div>
+              <div className={s.lede} style={rise(2)}>
+                Every 20 minutes, look at something about 20 feet away for 20
+                seconds. It relaxes the focusing muscles in your eyes and eases the
+                strain of staring at a screen. iRetina keeps that rhythm for you.
+              </div>
+            </>
+          )}
 
-        {step === 2 && (
-          <>
-            <div className={s.glyph}>
-              <Timer24Regular />
-            </div>
-            <div className={s.title}>Set your rhythm</div>
-            <div className={s.lede}>Pick how often you’d like a break, and how long it should last. You can change these anytime.</div>
-            <div className={s.card}>
-              <div className={s.row}>
-                <div className={s.rowText}>
-                  <div className={s.rowTitle}>Break every</div>
-                  <div className={s.seg}>
-                    {INTERVALS.map((o) => (
-                      <button
-                        key={o.v}
-                        className={`${s.choice} ${interval === o.v ? s.choiceOn : ''}`}
-                        onClick={() => setInterval(o.v)}
-                      >
-                        {o.label}
-                        <span className={s.choiceSub}>{o.sub}</span>
-                      </button>
-                    ))}
+          {step === 2 && (
+            <>
+              <div className={s.glyph} style={rise(0)}><Timer24Regular /></div>
+              <div className={s.title} style={rise(1)}>Set your rhythm</div>
+              <div className={s.lede} style={rise(2)}>
+                Pick how often you’d like a break and how long it should last. You
+                can change these anytime.
+              </div>
+              <div className={s.card} style={rise(3)}>
+                <div className={s.row}>
+                  <div className={s.rowText}>
+                    <div className={s.fieldLabel}>Break every</div>
+                    <div className={s.seg}>
+                      {INTERVALS.map((o) => (
+                        <button
+                          key={o.v}
+                          className={`${s.choice} ${interval === o.v ? s.choiceOn : ''}`}
+                          onClick={() => setInterval(o.v)}
+                        >
+                          {o.label}
+                          <span className={s.choiceSub}>{o.sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className={`${s.row} ${s.rowDivider}`}>
+                  <div className={s.rowText}>
+                    <div className={s.fieldLabel}>Break lasts</div>
+                    <div className={s.seg}>
+                      {DURATIONS.map((o) => (
+                        <button
+                          key={o.v}
+                          className={`${s.choice} ${duration === o.v ? s.choiceOn : ''}`}
+                          onClick={() => setDuration(o.v)}
+                        >
+                          {o.label}
+                          <span className={s.choiceSub}>{o.sub}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className={`${s.row} ${s.rowDivider}`}>
-                <div className={s.rowText}>
-                  <div className={s.rowTitle}>Break lasts</div>
-                  <div className={s.seg}>
-                    {DURATIONS.map((o) => (
-                      <button
-                        key={o.v}
-                        className={`${s.choice} ${duration === o.v ? s.choiceOn : ''}`}
-                        onClick={() => setDuration(o.v)}
-                      >
-                        {o.label}
-                        <span className={s.choiceSub}>{o.sub}</span>
-                      </button>
-                    ))}
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <div className={s.glyph} style={rise(0)}><Power24Regular /></div>
+              <div className={s.title} style={rise(1)}>Always ready</div>
+              <div className={s.lede} style={rise(2)}>
+                iRetina runs quietly in your system tray. Start it automatically
+                when you sign in so your eyes are always looked after.
+              </div>
+              <div className={s.card} style={rise(3)}>
+                <div className={s.row}>
+                  <span className={s.rowIcon}><Power24Regular /></span>
+                  <div className={s.rowText}>
+                    <div className={s.rowTitle}>Launch at sign-in</div>
+                    <div className={s.rowDesc}>Recommended — keeps iRetina running in the background</div>
                   </div>
+                  <Switch checked={launch} onChange={(_e, d) => setLaunch(d.checked)} />
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {step === 3 && (
-          <>
-            <div className={s.glyph}>
-              <Power24Regular />
-            </div>
-            <div className={s.title}>Always ready</div>
-            <div className={s.lede}>iRetina runs quietly in your system tray. Start it automatically when you sign in so your eyes are always looked after.</div>
-            <div className={s.card}>
-              <div className={s.row}>
-                <span className={s.rowIcon}><Power24Regular /></span>
-                <div className={s.rowText}>
-                  <div className={s.rowTitle}>Launch at sign-in</div>
-                  <div className={s.rowDesc}>Recommended — keeps iRetina running in the background</div>
-                </div>
-                <Switch checked={launch} onChange={(_e, d) => setLaunch(d.checked)} />
+          {step === 4 && (
+            <>
+              <div className={s.glyph} style={rise(0)}><Sparkle20Filled /></div>
+              <div className={s.title} style={rise(1)}>iRetina Pro</div>
+              <div className={s.lede} style={rise(2)}>
+                Unlock everything iRetina has to offer and keep your eyes at their best.
               </div>
-            </div>
-          </>
-        )}
-
-        {step === 4 && (
-          <>
-            <div className={s.glyph}>
-              <Sparkle24Filled />
-            </div>
-            <div className={s.title}>iRetina Pro</div>
-            <div className={s.lede}>Unlock everything iRetina has to offer and keep your eyes at their best.</div>
-            <div style={{ marginTop: 20, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span className={s.price}>$2.99</span>
-              <span className={s.pricePer}>/ month</span>
-            </div>
-            <div className={s.perks}>
-              {PERKS.map((p) => (
-                <div key={p} className={s.perk}>
-                  <span className={s.perkCheck}><Checkmark20Filled /></span>
-                  {p}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+              <div className={s.price} style={rise(2)}>
+                <span className={s.priceNum}>$2.99</span>
+                <span className={s.pricePer}>/ month</span>
+              </div>
+              <div className={s.perks}>
+                {PERKS.map((p, i) => (
+                  <div key={p} className={s.perk} style={rise(3 + i)}>
+                    <span className={s.perkCheck}><Checkmark12Filled /></span>
+                    {p}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className={s.footer}>
         <div className={s.dots}>
-          {Array.from({ length: total }).map((_, i) => (
+          {Array.from({ length: TOTAL }).map((_, i) => (
             <span key={i} className={`${s.dot} ${i === step ? s.dotOn : ''}`} />
           ))}
         </div>
 
         <div className={s.footerRight}>
-          {step > 0 && step < total - 1 && (
-            <button className={`${s.btn} ${s.btnSubtle}`} onClick={back}>
+          {step > 0 && step < TOTAL - 1 && (
+            <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(step - 1)}>
               <ChevronLeft16Regular /> Back
             </button>
           )}
 
-          {step < total - 1 && (
-            <button className={`${s.btn} ${s.btnPrimary}`} onClick={next}>
+          {step < TOTAL - 1 && (
+            <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(step + 1)}>
               {step === 0 ? 'Get started' : 'Continue'} <ChevronRight16Regular />
             </button>
           )}
 
-          {step === total - 1 && (
+          {step === TOTAL - 1 && (
             <>
               <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => finish('free')}>
                 Skip for now
               </button>
               <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => finish('pro')}>
-                <Sparkle24Filled style={{ fontSize: 16 }} /> Upgrade to Pro
+                <Sparkle20Filled /> Upgrade to Pro
               </button>
             </>
           )}
