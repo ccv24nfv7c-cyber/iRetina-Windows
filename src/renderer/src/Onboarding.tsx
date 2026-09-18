@@ -68,6 +68,18 @@ const useStyles = makeStyles({
     boxShadow: 'var(--shadow-sm)',
     marginBottom: '26px'
   },
+  // Welcome logo focal treatment: the mark on a soft accent halo.
+  logoHalo: {
+    width: '132px',
+    height: '132px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '28px',
+    borderRadius: '50%',
+    background:
+      'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 68%)'
+  },
   title: {
     fontSize: '30px',
     fontWeight: '650',
@@ -278,8 +290,8 @@ export default function Onboarding() {
         <div key={step} className={s.step} style={{ animation: stepAnim }}>
           {step === 0 && (
             <>
-              <div style={rise(0)}>
-                <Logo size={88} style={{ marginBottom: 26 }} />
+              <div className={s.logoHalo} style={rise(0)}>
+                <Logo size={104} />
               </div>
               <div className={s.title} style={rise(1)}>Welcome to iRetina</div>
               <div className={s.lede} style={rise(2)}>

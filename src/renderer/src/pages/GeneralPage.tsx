@@ -15,19 +15,22 @@ import { Page, Section, Card, Row, Btn } from './ui'
 const useLocal = makeStyles({
   hero: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    gap: '18px',
-    padding: '34px 24px 26px',
-    background: 'var(--surface)',
+    gap: '28px',
+    padding: '24px 28px',
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%, var(--surface) 58%)',
     border: '1px solid var(--border)',
-    borderRadius: '8px',
+    borderRadius: '10px',
     boxShadow: 'var(--shadow-sm)'
   },
-  ringWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' },
+  ringWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 },
+  heroBody: { display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minWidth: 0 },
+  heroHeadline: { fontSize: '19px', fontWeight: '600', letterSpacing: '-0.01em', color: 'var(--text)' },
+  heroSub: { fontSize: '13px', color: 'var(--text-dim)', lineHeight: 1.5, marginTop: '2px' },
   big: {
-    fontSize: '38px',
-    fontWeight: '400',
+    fontSize: '30px',
+    fontWeight: '600',
     letterSpacing: '-0.02em',
     lineHeight: 1,
     color: 'var(--text)',
@@ -42,7 +45,7 @@ const useLocal = makeStyles({
     color: 'var(--text-mute)',
     whiteSpace: 'nowrap'
   },
-  actions: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' },
+  actions: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-start' },
   stats: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
   stat: {
     background: 'var(--surface)',
@@ -143,6 +146,25 @@ export default function GeneralPage({
     ringProgress = 0
   }
 
+  const nextAt = new Date(now + Math.max(0, remaining)).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  })
+  let headline = `Next break at ${nextAt}`
+  let subline = 'Look ~20 feet away for 20 seconds to reset your eyes.'
+  if (engineState.isBreakActive) {
+    headline = 'Break in progress'
+    subline = 'Rest your eyes — the break screen is showing now.'
+  } else if (engineState.isPaused) {
+    headline = 'Timer paused'
+    subline =
+      engineState.pauseReason === 'dnd'
+        ? 'Do Not Disturb is on. Breaks are silenced.'
+        : engineState.pauseReason === 'away'
+          ? "You're away — breaks resume when you're back."
+          : 'Resume whenever you’re ready to continue.'
+  }
+
   return (
     <Page title="Dashboard">
       <div
@@ -153,22 +175,28 @@ export default function GeneralPage({
           className={l.ringWrap}
           style={{ animation: `winPopIn ${DUR.slow}ms ${EASE.decel} 140ms both` }}
         >
-          <Ring size={220} stroke={12} progress={ringProgress} dim={engineState.isPaused}>
+          <Ring size={148} stroke={9} progress={ringProgress} dim={engineState.isPaused}>
             {center}
           </Ring>
           <div className={l.ringLabel}>{ringLabel}</div>
         </div>
-        <div className={l.actions}>
-          <Btn variant="primary" icon={<Play16Filled />} onClick={() => window.iretina.engine.triggerNow()}>
-            Take a break now
-          </Btn>
-          {engineState.isPaused ? (
-            <Btn onClick={resume}>Resume timer</Btn>
-          ) : (
-            <Btn icon={<Pause16Regular />} onClick={pause} disabled={engineState.isBreakActive}>
-              Pause
+        <div className={l.heroBody}>
+          <div>
+            <div className={l.heroHeadline}>{headline}</div>
+            <div className={l.heroSub}>{subline}</div>
+          </div>
+          <div className={l.actions}>
+            <Btn variant="primary" icon={<Play16Filled />} onClick={() => window.iretina.engine.triggerNow()}>
+              Take a break now
             </Btn>
-          )}
+            {engineState.isPaused ? (
+              <Btn onClick={resume}>Resume timer</Btn>
+            ) : (
+              <Btn icon={<Pause16Regular />} onClick={pause} disabled={engineState.isBreakActive}>
+                Pause
+              </Btn>
+            )}
+          </div>
         </div>
       </div>
 
