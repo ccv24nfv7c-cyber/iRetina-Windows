@@ -211,7 +211,7 @@ function createTrayPopup() {
   trayPopupWindow.once('ready-to-show', () => {
     trayPopupWindow!.show()
     trayPopupWindow!.focus()
-    // Attach the dismiss-on-blur handler only after the window has settled —
+    // Attach the dismiss-on-blur handler only after the window has settled -
     // a transparent frameless window can emit a spurious blur the instant it
     // appears, which would close it before the user sees it.
     setTimeout(() => {
@@ -234,7 +234,7 @@ function closeTrayPopup() {
 // --- Setup tray ---
 function setupTray() {
   tray = new Tray(getTrayIcon())
-  tray.setToolTip('iRetina — Eye Break Reminder')
+  tray.setToolTip('iRetina · Eye Break Reminder')
 
   tray.on('click', () => {
     createTrayPopup()
@@ -352,7 +352,7 @@ function pushStateToRenderer() {
 
 // --- App lifecycle ---
 app.whenReady().then(() => {
-  // Don't show in taskbar — tray-only app
+  // Don't show in taskbar - tray-only app
   app.setAppUserModelId('com.iretina.windows')
 
   setupIPC()
@@ -379,7 +379,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  // iRetina lives in the tray — closing the settings window must not quit it.
+  // iRetina lives in the tray - closing the settings window must not quit it.
 })
 
 app.on('before-quit', () => {

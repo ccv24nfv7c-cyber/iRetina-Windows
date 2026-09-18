@@ -38,7 +38,7 @@ const subtitles = [
 
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
-type Phase = 'hidden' | 'entering' | 'running' | 'leaving'
+type Phase = 'hidden' | 'running' | 'leaving'
 
 function OverlayApp(): React.JSX.Element {
   const [durationSec, setDurationSec] = useState(30)
@@ -53,8 +53,7 @@ function OverlayApp(): React.JSX.Element {
   const primaryRef = useRef(true)
   const closingRef = useRef(false)
 
-  const visible = phase === 'running'
-  const shown = phase !== 'hidden' && phase !== 'leaving'
+  const shown = phase === 'running'
 
   // --- Close sequence: ding, fade out, then tell the main process ---
   const beginClose = useCallback((action: 'finished' | 'skip') => {
@@ -76,17 +75,20 @@ function OverlayApp(): React.JSX.Element {
       setDurationSec(d)
       setRemaining(d)
       setStrict(s)
-      requestAnimationFrame(() => setPhase('entering'))
-      window.setTimeout(() => {
-        setPhase('running')
-        if (soundEnabled && isPrimary) playBreakStart()
-      }, prefersReducedMotion ? 30 : FADE_IN_MS)
+      // Two frames so the browser paints the hidden state first, then one
+      // single fade+rise into view (no second content animation afterwards).
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          setPhase('running')
+          if (soundEnabled && isPrimary) playBreakStart()
+        })
+      )
     })
   }, [])
 
   // --- Countdown ---
   // When it ticks down to the final second, the overlay fades straight out
-  // (with the chime) — no separate "done" screen.
+  // (with the chime) - no separate "done" screen.
   useEffect(() => {
     if (phase !== 'running') return
     if (remaining <= 1) {
@@ -167,7 +169,10 @@ function OverlayApp(): React.JSX.Element {
         alignItems: 'center',
         justifyContent: 'center',
         opacity: shown ? 1 : 0,
-        transition: `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+        transform: shown ? 'translateY(0)' : 'translateY(10px)',
+        transition: prefersReducedMotion
+          ? `opacity ${shown ? 120 : FADE_OUT_MS}ms linear`
+          : `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.22, 1, 0.36, 1), transform ${FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         position: 'relative',
         overflow: 'hidden',
         userSelect: 'none'
@@ -177,10 +182,6 @@ function OverlayApp(): React.JSX.Element {
         @keyframes iretinaGlow {
           0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
           50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.08); }
-        }
-        @keyframes iretinaDrawIn {
-          from { opacity: 0; transform: translateY(14px) scale(0.985); }
-          to   { opacity: 1; transform: translateY(0)    scale(1); }
         }
       `}</style>
 
@@ -228,11 +229,7 @@ function OverlayApp(): React.JSX.Element {
           gap: '30px',
           textAlign: 'center',
           maxWidth: '700px',
-          padding: '0 40px',
-          animation:
-            visible && !prefersReducedMotion
-              ? `iretinaDrawIn ${FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both`
-              : 'none'
+          padding: '0 40px'
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -363,7 +360,7 @@ function OverlayApp(): React.JSX.Element {
                 strokeLinejoin="round"
               />
             </svg>
-            Strict Mode — this break can’t be skipped
+            Strict Mode. This break can’t be skipped
           </div>
         ) : (
           <>

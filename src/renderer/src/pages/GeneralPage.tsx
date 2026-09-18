@@ -154,14 +154,14 @@ export default function GeneralPage({
   let subline = 'Look ~20 feet away for 20 seconds to reset your eyes.'
   if (engineState.isBreakActive) {
     headline = 'Break in progress'
-    subline = 'Rest your eyes — the break screen is showing now.'
+    subline = 'Rest your eyes. The break screen is showing now.'
   } else if (engineState.isPaused) {
     headline = 'Timer paused'
     subline =
       engineState.pauseReason === 'dnd'
         ? 'Do Not Disturb is on. Breaks are silenced.'
         : engineState.pauseReason === 'away'
-          ? "You're away — breaks resume when you're back."
+          ? "You're away. Breaks resume when you're back."
           : 'Resume whenever you’re ready to continue.'
   }
 
@@ -223,7 +223,7 @@ export default function GeneralPage({
             title="Do Not Disturb"
             desc={
               dndActive
-                ? `On — about ${dndLeft} left. All breaks are paused.`
+                ? `On for about ${dndLeft} more. All breaks are paused.`
                 : 'Silence every break for a set stretch of time'
             }
             right={

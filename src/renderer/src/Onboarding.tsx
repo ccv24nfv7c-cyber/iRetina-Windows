@@ -22,7 +22,7 @@ const useStyles = makeStyles({
     fontFamily:
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
   },
-  // Ambient accent glow behind the content — a soft radial (no blur filter,
+  // Ambient accent glow behind the content - a soft radial (no blur filter,
   // which is expensive on low-end GPUs).
   glowField: {
     position: 'absolute',
@@ -295,7 +295,7 @@ export default function Onboarding() {
               </div>
               <div className={s.title} style={rise(1)}>Welcome to iRetina</div>
               <div className={s.lede} style={rise(2)}>
-                Gentle, well-timed reminders to rest your eyes — so long screen
+                Gentle, well-timed reminders to rest your eyes, so long screen
                 days feel a little easier. Let’s get you set up in a few quick steps.
               </div>
             </>
@@ -373,7 +373,7 @@ export default function Onboarding() {
                   <span className={s.rowIcon}><Power24Regular /></span>
                   <div className={s.rowText}>
                     <div className={s.rowTitle}>Launch at sign-in</div>
-                    <div className={s.rowDesc}>Recommended — keeps iRetina running in the background</div>
+                    <div className={s.rowDesc}>Recommended. Keeps iRetina running in the background</div>
                   </div>
                   <Switch checked={launch} onChange={(_e, d) => setLaunch(d.checked)} />
                 </div>

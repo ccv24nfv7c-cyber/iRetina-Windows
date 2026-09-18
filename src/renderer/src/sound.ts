@@ -48,13 +48,13 @@ function tone({ freq, at = 0, duration = 0.6, gain = 0.14, type = 'sine' }: Tone
   osc.stop(t0 + duration + 0.05)
 }
 
-/** Soft, low two-note swell — played as the break begins. */
+/** Soft, low two-note swell - played as the break begins. */
 export function playBreakStart(): void {
   tone({ freq: 329.63, duration: 0.55, gain: 0.09 }) // E4
   tone({ freq: 493.88, at: 0.14, duration: 0.7, gain: 0.07 }) // B4
 }
 
-/** Bright bell "ding" — played as the overlay fades away. */
+/** Bright bell "ding" - played as the overlay fades away. */
 export function playBreakEnd(): void {
   tone({ freq: 659.25, duration: 0.9, gain: 0.16 }) // E5
   tone({ freq: 987.77, at: 0.085, duration: 1.1, gain: 0.12 }) // B5

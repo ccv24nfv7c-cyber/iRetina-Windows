@@ -88,7 +88,7 @@ const useStyles = makeStyles({
     fontWeight: '600',
     ':hover': { background: 'var(--surface-hover)' }
   },
-  // Win11 NavigationView selection pill — a short rounded bar on the left edge.
+  // Win11 NavigationView selection pill - a short rounded bar on the left edge.
   navBar: {
     position: 'absolute',
     left: '0',

@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
  * Windows 11 design tokens as CSS custom properties.
  *
  * The window itself paints a Mica backdrop (see main/index.ts), so the app
- * background is intentionally *transparent* — the desktop tint shows through
+ * background is intentionally *transparent* - the desktop tint shows through
  * exactly like the real Settings app. Content sits on layered "card" surfaces
  * that mimic WinUI's Layer / CardBackground fills, with the system accent used
  * sparingly. Every value has a light and dark definition tuned to Win11.

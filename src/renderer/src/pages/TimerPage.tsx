@@ -162,7 +162,7 @@ export default function TimerPage({
       </Section>
 
       <div className={u.body}>
-        iRetina follows the 20-20-20 rule — every 20 minutes, look at something about 20 feet away
+        iRetina follows the 20-20-20 rule. Every 20 minutes, look at something about 20 feet away
         for 20 seconds.
       </div>
     </Page>

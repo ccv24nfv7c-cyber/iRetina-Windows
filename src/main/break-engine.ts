@@ -14,7 +14,7 @@ let isBreakActive = false
 let overlayWindows: BrowserWindow[] = []
 
 // The payload the overlay renderer needs. Kept around so we can re-send it if the
-// overlay window reloads (e.g. Vite HMR in dev, or a renderer crash) — otherwise
+// overlay window reloads (e.g. Vite HMR in dev, or a renderer crash) - otherwise
 // the overlay would sit there invisible while the engine still thinks a break is
 // running.
 type BreakPayload = {
@@ -104,7 +104,7 @@ function resetBreakState() {
 
 export function startBreak() {
   // Self-heal: if we think a break is active but no overlay is actually on
-  // screen, the previous one got wedged — clear it and start fresh.
+  // screen, the previous one got wedged - clear it and start fresh.
   if (isBreakActive && liveOverlayCount() === 0) {
     resetBreakState()
   }
@@ -141,7 +141,7 @@ export function resumeTimer() {
 
 export function skipBreak() {
   if (store.get('strictBreakModeEnabled')) return
-  // Multiple overlay windows (one per monitor) can each report a skip — only
+  // Multiple overlay windows (one per monitor) can each report a skip - only
   // act on the first one so the completed-break count stays accurate.
   if (!isBreakActive) return
   resetBreakState()
@@ -228,7 +228,7 @@ function showOverlay() {
     win.setAlwaysOnTop(true, 'screen-saver')
     win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
-    // Re-send the start payload on every load — covers the initial load AND any
+    // Re-send the start payload on every load - covers the initial load AND any
     // reload (HMR / crash recovery), so the overlay never ends up blank.
     win.webContents.on('did-finish-load', () => {
       win.webContents.send('overlay:start', payload)
@@ -267,7 +267,7 @@ function closeOverlay() {
 }
 
 export function onOverlayFinished() {
-  // One "finished" per monitor arrives — count the break once.
+  // One "finished" per monitor arrives - count the break once.
   if (!isBreakActive) return
   resetBreakState()
   store.set('breaksCompleted', store.get('breaksCompleted') + 1)
