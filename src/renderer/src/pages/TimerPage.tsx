@@ -21,8 +21,7 @@ const useLocal = makeStyles({
     cursor: 'pointer',
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '14px',
-    boxShadow: 'var(--shadow-sm)',
+    borderRadius: '8px',
     transition: 'border-color .12s ease, background .12s ease',
     ':hover': { background: 'var(--surface-hover)' }
   },

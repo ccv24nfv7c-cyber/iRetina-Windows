@@ -12,32 +12,32 @@ import type { CSSProperties } from 'react'
 export type Scheme = 'light' | 'dark'
 
 const DARK: Record<string, string> = {
-  // Transparent so the Mica material shows through the window chrome.
+  // Only the very base is transparent so Mica tints the window edges/nav.
+  // Cards themselves are near-solid (Win11 "CardBackground") for crisp
+  // definition and cheap compositing on low-end hardware.
   '--bg': 'transparent',
-  // Solid-ish layer that sits on Mica; matches WinUI CardBackgroundFillColorDefault.
-  '--surface': 'rgba(58, 58, 62, 0.30)',
-  '--surface-2': 'rgba(255, 255, 255, 0.05)',
-  '--surface-hover': 'rgba(255, 255, 255, 0.08)',
-  '--surface-active': 'rgba(255, 255, 255, 0.03)',
-  // Content layer behind the nav / used for solid panels.
-  '--layer': 'rgba(32, 32, 32, 0.70)',
-  '--border': 'rgba(255, 255, 255, 0.07)',
-  '--border-strong': 'rgba(255, 255, 255, 0.12)',
+  '--surface': '#2B2B2D',
+  '--surface-2': '#333336',
+  '--surface-hover': '#3A3A3E',
+  '--surface-active': '#404045',
+  '--layer': '#272729',
+  '--border': 'rgba(255, 255, 255, 0.086)',
+  '--border-strong': 'rgba(255, 255, 255, 0.16)',
   '--text': '#FFFFFF',
-  '--text-dim': 'rgba(255, 255, 255, 0.786)',
-  '--text-mute': 'rgba(255, 255, 255, 0.545)',
+  '--text-dim': 'rgba(255, 255, 255, 0.792)',
+  '--text-mute': 'rgba(255, 255, 255, 0.549)',
   // Windows 11 system accent (default blue), light-on-dark variants.
   '--accent': '#60CDFF',
   '--accent-hover': '#75D5FF',
   '--accent-press': '#4AB8EC',
-  '--accent-soft': 'rgba(96, 205, 255, 0.10)',
+  '--accent-soft': 'rgba(96, 205, 255, 0.12)',
   '--on-accent': '#000000',
   '--ring-track': 'rgba(255, 255, 255, 0.10)',
   '--focus': '#60CDFF',
-  '--shadow-sm': '0 1px 2px rgba(0,0,0,0.28)',
-  '--shadow': '0 8px 24px rgba(0,0,0,0.40)',
+  '--shadow-sm': '0 2px 4px rgba(0,0,0,0.32)',
+  '--shadow': '0 8px 20px rgba(0,0,0,0.44)',
   '--danger': '#FF99A4',
-  '--danger-soft': 'rgba(255, 153, 164, 0.10)',
+  '--danger-soft': 'rgba(255, 153, 164, 0.12)',
   '--warn': '#FCE100',
   '--good': '#6CCB5F',
   '--scrim': 'rgba(0,0,0,0.55)'
@@ -45,12 +45,12 @@ const DARK: Record<string, string> = {
 
 const LIGHT: Record<string, string> = {
   '--bg': 'transparent',
-  '--surface': 'rgba(255, 255, 255, 0.70)',
-  '--surface-2': 'rgba(0, 0, 0, 0.03)',
-  '--surface-hover': 'rgba(0, 0, 0, 0.05)',
-  '--surface-active': 'rgba(0, 0, 0, 0.02)',
-  '--layer': 'rgba(249, 249, 249, 0.80)',
-  '--border': 'rgba(0, 0, 0, 0.06)',
+  '--surface': '#FFFFFF',
+  '--surface-2': '#F6F6F8',
+  '--surface-hover': '#F0F0F3',
+  '--surface-active': '#E9E9ED',
+  '--layer': '#FBFBFB',
+  '--border': 'rgba(0, 0, 0, 0.0578)',
   '--border-strong': 'rgba(0, 0, 0, 0.11)',
   '--text': 'rgba(0, 0, 0, 0.896)',
   '--text-dim': 'rgba(0, 0, 0, 0.606)',
@@ -63,8 +63,8 @@ const LIGHT: Record<string, string> = {
   '--on-accent': '#FFFFFF',
   '--ring-track': 'rgba(0, 0, 0, 0.09)',
   '--focus': '#005FB8',
-  '--shadow-sm': '0 1px 2px rgba(0,0,0,0.06)',
-  '--shadow': '0 8px 24px rgba(0,0,0,0.14)',
+  '--shadow-sm': '0 1px 3px rgba(0,0,0,0.08)',
+  '--shadow': '0 8px 20px rgba(0,0,0,0.16)',
   '--danger': '#C42B1C',
   '--danger-soft': 'rgba(196, 43, 28, 0.06)',
   '--warn': '#9D5D00',

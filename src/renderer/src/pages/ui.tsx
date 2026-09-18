@@ -30,8 +30,7 @@ export const useUi = makeStyles({
   card: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow-sm)',
+    borderRadius: '8px',
     overflow: 'hidden'
   },
 

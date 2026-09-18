@@ -21,7 +21,7 @@ const useLocal = makeStyles({
     padding: '34px 24px 26px',
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     boxShadow: 'var(--shadow-sm)'
   },
   ringWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' },
@@ -47,7 +47,7 @@ const useLocal = makeStyles({
   stat: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     padding: '16px',
     display: 'flex',
     flexDirection: 'column',

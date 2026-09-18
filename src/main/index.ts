@@ -251,6 +251,10 @@ function setupTray() {
         label: 'Take Break Now',
         click: () => triggerNow()
       },
+      {
+        label: 'Run Setup Again…',
+        click: () => createOnboardingWindow()
+      },
       { type: 'separator' },
       {
         label: 'Quit iRetina',

@@ -22,19 +22,19 @@ const useStyles = makeStyles({
     fontFamily:
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
   },
-  // Ambient accent glow behind the content — subtle depth, very Win11.
+  // Ambient accent glow behind the content — a soft radial (no blur filter,
+  // which is expensive on low-end GPUs).
   glowField: {
     position: 'absolute',
-    top: '-160px',
+    top: '-200px',
     left: '50%',
-    width: '520px',
-    height: '520px',
+    width: '560px',
+    height: '460px',
     transform: 'translateX(-50%)',
-    borderRadius: '50%',
     background:
-      'radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 68%)',
+      'radial-gradient(ellipse at center, var(--accent-soft) 0%, transparent 70%)',
     pointerEvents: 'none',
-    filter: 'blur(8px)'
+    opacity: 0.9
   },
   body: {
     flex: 1,

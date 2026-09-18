@@ -15,7 +15,7 @@ const useLocal = makeStyles({
     cursor: 'pointer',
     background: 'var(--surface-2)',
     border: '1px solid var(--border)',
-    borderRadius: '12px',
+    borderRadius: '8px',
     transition: 'border-color 160ms ease, background 160ms ease',
     ':hover': { background: 'var(--surface-hover)' },
     ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '2px' }
