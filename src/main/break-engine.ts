@@ -1,4 +1,4 @@
-import { BrowserWindow, Notification, screen } from 'electron'
+import { BrowserWindow, Notification, screen, desktopCapturer } from 'electron'
 import { store } from './preferences'
 import { resolve } from 'path'
 
@@ -22,6 +22,8 @@ type BreakPayload = {
   strict: boolean
   soundEnabled: boolean
   isPrimary: boolean
+  /** Data-URL snapshot of this display, shown blurred behind the break UI. */
+  screenshot: string | null
 }
 let onStateChange: (() => void) | null = null
 
@@ -113,7 +115,7 @@ export function startBreak() {
   clearTimers()
   isBreakActive = true
   notify()
-  showOverlay()
+  void showOverlay()
 
   // Safety net: never let a break outlive its duration by more than 10s.
   const maxMs = store.get('breakDurationSec') * 1000 + 10_000
@@ -185,9 +187,31 @@ export function deactivateDND() {
   }
 }
 
-function showOverlay() {
+async function captureScreens(): Promise<Record<string, string>> {
+  const shots: Record<string, string> = {}
+  try {
+    // Downscaled snapshot per screen; the heavy blur in the overlay hides the
+    // loss of detail while keeping this cheap.
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: 1600, height: 1000 }
+    })
+    for (const src of sources) {
+      if (src.display_id && !src.thumbnail.isEmpty()) {
+        shots[src.display_id] = src.thumbnail.toDataURL()
+      }
+    }
+  } catch {
+    /* Screen capture unavailable (e.g. missing macOS permission) - fall back to
+       a solid dim background in the overlay. */
+  }
+  return shots
+}
+
+async function showOverlay() {
   const displays = screen.getAllDisplays()
   const primaryId = screen.getPrimaryDisplay().id
+  const shots = await captureScreens()
 
   overlayWindows = displays.map((display) => {
     const isPrimary = display.id === primaryId
@@ -195,7 +219,8 @@ function showOverlay() {
       durationSec: store.get('breakDurationSec'),
       strict: store.get('strictBreakModeEnabled'),
       soundEnabled: store.get('soundEnabled'),
-      isPrimary
+      isPrimary,
+      screenshot: shots[String(display.id)] ?? null
     }
 
     const win = new BrowserWindow({

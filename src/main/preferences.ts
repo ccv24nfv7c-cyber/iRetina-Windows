@@ -20,7 +20,7 @@ interface Schema {
 const defaults: Schema = {
   intervalMinutes: 20,
   breakDurationSec: 30,
-  theme: 'system',
+  theme: 'light',
   headsUpEnabled: true,
   strictBreakModeEnabled: false,
   smartPauseEnabled: true,

@@ -114,7 +114,7 @@ function createOnboardingWindow() {
 
   onboardingWindow = new BrowserWindow({
     width: 720,
-    height: 640,
+    height: 680,
     resizable: false,
     maximizable: false,
     title: 'Welcome to iRetina',

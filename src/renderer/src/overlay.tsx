@@ -12,6 +12,7 @@ declare global {
           strict: boolean
           soundEnabled: boolean
           isPrimary: boolean
+          screenshot: string | null
         }) => void
       ) => void
       finished: () => void
@@ -21,8 +22,8 @@ declare global {
   }
 }
 
-const FADE_IN_MS = 420
-const FADE_OUT_MS = 620
+const FADE_IN_MS = 560
+const FADE_OUT_MS = 480
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
@@ -48,6 +49,7 @@ function OverlayApp(): React.JSX.Element {
   const [quote] = useState(() => pick(quotes))
   const [subtitle] = useState(() => pick(subtitles))
   const [now, setNow] = useState(() => new Date())
+  const [screenshot, setScreenshot] = useState<string | null>(null)
 
   const soundRef = useRef(true)
   const primaryRef = useRef(true)
@@ -69,12 +71,13 @@ function OverlayApp(): React.JSX.Element {
 
   // --- Receive break parameters from the main process ---
   useEffect(() => {
-    window.overlayBridge.onStart(({ durationSec: d, strict: s, soundEnabled, isPrimary }) => {
+    window.overlayBridge.onStart(({ durationSec: d, strict: s, soundEnabled, isPrimary, screenshot: shot }) => {
       soundRef.current = soundEnabled
       primaryRef.current = isPrimary
       setDurationSec(d)
       setRemaining(d)
       setStrict(s)
+      setScreenshot(shot)
       // Two frames so the browser paints the hidden state first, then one
       // single fade+rise into view (no second content animation afterwards).
       requestAnimationFrame(() =>
@@ -162,45 +165,46 @@ function OverlayApp(): React.JSX.Element {
       style={{
         width: '100vw',
         height: '100vh',
-        background:
-          'radial-gradient(120% 120% at 50% 30%, #12161f 0%, #0c0f17 45%, #07090f 100%)',
+        background: '#0b0d12',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: shown ? 1 : 0,
-        transform: shown ? 'translateY(0)' : 'translateY(10px)',
+        // A gentle settle: the whole scene eases from a hair oversized down to
+        // rest as it fades in, which reads far more premium than a flat fade.
+        transform: shown ? 'scale(1)' : 'scale(1.05)',
         transition: prefersReducedMotion
-          ? `opacity ${shown ? 120 : FADE_OUT_MS}ms linear`
-          : `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.22, 1, 0.36, 1), transform ${FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+          ? `opacity ${shown ? 140 : FADE_OUT_MS}ms linear`
+          : `opacity ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${shown ? FADE_IN_MS : FADE_OUT_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
         position: 'relative',
         overflow: 'hidden',
         userSelect: 'none'
       }}
     >
-      <style>{`
-        @keyframes iretinaGlow {
-          0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
-          50%      { opacity: 0.9;  transform: translate(-50%, -50%) scale(1.08); }
-        }
-      `}</style>
-
-      {/* Ambient glow */}
+      {/* Frosted snapshot of the user's own screen, heavily blurred + dimmed. */}
+      {screenshot && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${screenshot})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(32px) saturate(1.15)',
+            transform: 'scale(1.12)',
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      {/* Scrim for legibility + a soft top-down darkening. */}
       <div
         style={{
           position: 'absolute',
-          top: '34%',
-          left: '50%',
-          width: '680px',
-          height: '680px',
-          borderRadius: '50%',
+          inset: 0,
           background:
-            'radial-gradient(circle, rgba(0, 120, 212, 0.16) 0%, rgba(96,165,250,0.05) 40%, transparent 70%)',
-          pointerEvents: 'none',
-          animation: prefersReducedMotion
-            ? 'none'
-            : 'iretinaGlow 7s ease-in-out infinite',
-          transform: 'translate(-50%, -50%)'
+            'linear-gradient(180deg, rgba(8,10,15,0.62) 0%, rgba(8,10,15,0.72) 100%)',
+          pointerEvents: 'none'
         }}
       />
 

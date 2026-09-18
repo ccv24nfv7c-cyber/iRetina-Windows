@@ -55,18 +55,19 @@ const useStyles = makeStyles({
     boxSizing: 'border-box'
   },
   glyph: {
-    width: '84px',
-    height: '84px',
-    borderRadius: '22px',
+    width: '76px',
+    height: '76px',
+    borderRadius: '20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '38px',
+    fontSize: '34px',
     color: 'var(--accent)',
-    background: 'var(--accent-soft)',
-    border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-sm)',
-    marginBottom: '26px'
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, color-mix(in srgb, var(--accent) 6%, var(--surface)) 100%)',
+    border: '1px solid color-mix(in srgb, var(--accent) 24%, transparent)',
+    boxShadow: '0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent)',
+    marginBottom: '22px'
   },
   // Welcome logo focal treatment: the mark on a soft accent halo.
   logoHalo: {
@@ -81,10 +82,10 @@ const useStyles = makeStyles({
       'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 68%)'
   },
   title: {
-    fontSize: '30px',
+    fontSize: '27px',
     fontWeight: '650',
     letterSpacing: '-0.02em',
-    lineHeight: 1.12,
+    lineHeight: 1.15,
     marginBottom: '12px'
   },
   lede: {
@@ -140,23 +141,54 @@ const useStyles = makeStyles({
     marginTop: '3px'
   },
 
-  // Paywall
-  price: { display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '22px' },
-  priceNum: { fontSize: '44px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
+  // Paywall — a single self-contained plan card.
+  proPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+    marginBottom: '14px',
+    padding: '4px 11px',
+    borderRadius: '20px',
+    background: 'color-mix(in srgb, var(--accent) 16%, transparent)',
+    color: 'var(--accent)',
+    fontSize: '11px',
+    fontWeight: '700',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase'
+  },
+  planCard: {
+    marginTop: '22px',
+    width: '100%',
+    maxWidth: '380px',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    boxShadow: 'var(--shadow-sm)',
+    overflow: 'hidden',
+    textAlign: 'left'
+  },
+  planHead: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '18px 20px',
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)) 0%, var(--surface) 100%)',
+    borderBottom: '1px solid var(--border)'
+  },
+  priceNum: { fontSize: '40px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
   pricePer: { fontSize: '14px', fontWeight: '400', color: 'var(--text-mute)' },
   perks: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '13px',
-    marginTop: '24px',
-    maxWidth: '360px',
-    width: '100%',
-    textAlign: 'left'
+    gap: '12px',
+    padding: '16px 20px 18px'
   },
-  perk: { display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px' },
+  perk: { display: 'flex', alignItems: 'center', gap: '11px', fontSize: '13.5px' },
   perkCheck: {
-    width: '20px',
-    height: '20px',
+    width: '19px',
+    height: '19px',
     borderRadius: '50%',
     background: 'var(--accent)',
     color: 'var(--on-accent)',
@@ -164,7 +196,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    fontSize: '11px'
+    fontSize: '10px'
   },
 
   footer: {
@@ -383,22 +415,26 @@ export default function Onboarding() {
 
           {step === 4 && (
             <>
-              <div className={s.glyph} style={rise(0)}><Sparkle20Filled /></div>
-              <div className={s.title} style={rise(1)}>iRetina Pro</div>
+              <div className={s.proPill} style={rise(0)}>
+                <Sparkle20Filled style={{ fontSize: 13 }} /> iRetina Pro
+              </div>
+              <div className={s.title} style={rise(1)}>Unlock the full experience</div>
               <div className={s.lede} style={rise(2)}>
-                Unlock everything iRetina has to offer and keep your eyes at their best.
+                Everything iRetina has to offer, to keep your eyes at their best.
               </div>
-              <div className={s.price} style={rise(2)}>
-                <span className={s.priceNum}>$2.99</span>
-                <span className={s.pricePer}>/ month</span>
-              </div>
-              <div className={s.perks}>
-                {PERKS.map((p, i) => (
-                  <div key={p} className={s.perk} style={rise(3 + i)}>
-                    <span className={s.perkCheck}><Checkmark12Filled /></span>
-                    {p}
-                  </div>
-                ))}
+              <div className={s.planCard} style={rise(3)}>
+                <div className={s.planHead}>
+                  <span className={s.priceNum}>$2.99</span>
+                  <span className={s.pricePer}>/ month</span>
+                </div>
+                <div className={s.perks}>
+                  {PERKS.map((p) => (
+                    <div key={p} className={s.perk}>
+                      <span className={s.perkCheck}><Checkmark12Filled /></span>
+                      {p}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
