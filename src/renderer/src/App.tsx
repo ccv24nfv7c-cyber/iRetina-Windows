@@ -135,6 +135,12 @@ declare global {
         completeOnboarding: () => Promise<void>
         setPlan: (plan: 'free' | 'pro') => Promise<void>
       }
+      account: {
+        signUp: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>
+        login: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>
+        continueWithGoogle: () => Promise<{ ok: boolean; message?: string }>
+        startCheckout: (billing: 'yearly' | 'monthly') => Promise<{ ok: boolean; message?: string }>
+      }
     }
   }
 }

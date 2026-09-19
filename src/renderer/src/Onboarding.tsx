@@ -212,6 +212,12 @@ const useStyles = makeStyles({
     background: 'none', border: 'none', padding: 0, cursor: 'pointer',
     color: 'var(--accent)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '600'
   },
+  error: {
+    maxWidth: '340px', marginTop: '12px', padding: '10px 12px', borderRadius: '8px',
+    background: 'color-mix(in srgb, #D13438 10%, var(--surface))',
+    border: '1px solid color-mix(in srgb, #D13438 35%, var(--border))',
+    color: '#D13438', fontSize: '12.5px', lineHeight: 1.4
+  },
 
   // Paywall
   proPill: {
@@ -337,6 +343,8 @@ export default function Onboarding() {
   const [authView, setAuthView] = useState<'signup' | 'login'>('signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const firstRender = useRef(true)
 
   useEffect(() => { window.iretina.prefs.set('intervalMinutes', interval) }, [interval])
@@ -353,10 +361,51 @@ export default function Onboarding() {
   }
 
   function go(to: number) {
+    setError('')
     setDir(to > step ? 1 : -1)
     setStep(Math.max(0, Math.min(TOTAL - 1, to)))
   }
   function tryBreak() { window.iretina.engine.triggerNow() }
+
+  async function submitAccount() {
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail || !password) {
+      setError('Enter your email and password, or skip account setup for now.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    const result = authView === 'signup'
+      ? await window.iretina.account.signUp(trimmedEmail, password)
+      : await window.iretina.account.login(trimmedEmail, password)
+    setBusy(false)
+    if (!result.ok) {
+      setError(result.message || 'Account setup failed.')
+      return
+    }
+    go(6)
+  }
+
+  async function googleAuth() {
+    setBusy(true)
+    setError('')
+    const result = await window.iretina.account.continueWithGoogle()
+    setBusy(false)
+    if (!result.ok) setError(result.message || 'Google sign-in failed.')
+  }
+
+  async function startCheckout() {
+    setBusy(true)
+    setError('')
+    const result = await window.iretina.account.startCheckout(billing)
+    setBusy(false)
+    if (!result.ok) {
+      setError(result.message || 'Checkout failed.')
+      return
+    }
+    setPlan('pro')
+    go(7)
+  }
 
   const stepAnim = firstRender.current
     ? `winFadeIn ${DUR.normal}ms ${EASE.decel} both`
@@ -475,7 +524,7 @@ export default function Onboarding() {
               <div className={s.logoHalo} style={{ ...rise(0), width: 92, height: 92, marginBottom: 14 }}><Logo size={58} /></div>
               <div className={s.title} style={rise(1)}>Create your account</div>
               <div className={s.lede} style={rise(2)}>So your plan and settings follow you to any device. You can skip this for now.</div>
-              <button className={s.googleBtn} style={rise(3)}><GoogleG /> Continue with Google</button>
+              <button className={s.googleBtn} style={rise(3)} onClick={googleAuth} disabled={busy}><GoogleG /> Continue with Google</button>
               <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input className={s.input} type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -484,6 +533,7 @@ export default function Onboarding() {
               <div className={s.authSwitch} style={rise(5)}>
                 Already have an account? <button className={s.authLink} onClick={() => setAuthView('login')}>Log in</button>
               </div>
+              {error && <div className={s.error} role="alert">{error}</div>}
             </>
           )}
 
@@ -492,7 +542,7 @@ export default function Onboarding() {
               <div className={s.logoHalo} style={{ ...rise(0), width: 92, height: 92, marginBottom: 14 }}><Logo size={58} /></div>
               <div className={s.title} style={rise(1)}>Welcome back</div>
               <div className={s.lede} style={rise(2)}>Log in to restore your iRetina Pro plan and settings.</div>
-              <button className={s.googleBtn} style={rise(3)}><GoogleG /> Continue with Google</button>
+              <button className={s.googleBtn} style={rise(3)} onClick={googleAuth} disabled={busy}><GoogleG /> Continue with Google</button>
               <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input className={s.input} type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -501,6 +551,7 @@ export default function Onboarding() {
               <div className={s.authSwitch} style={rise(5)}>
                 New to iRetina? <button className={s.authLink} onClick={() => setAuthView('signup')}>Create an account</button>
               </div>
+              {error && <div className={s.error} role="alert">{error}</div>}
             </>
           )}
 
@@ -537,6 +588,7 @@ export default function Onboarding() {
                   </div>
                 </div>
               </div>
+              {error && <div className={s.error} role="alert">{error}</div>}
             </>
           )}
 
@@ -560,7 +612,7 @@ export default function Onboarding() {
       <div className={s.footer}>
         <div className={s.dots}>
           {Array.from({ length: TOTAL }).map((_, i) => (
-            <span key={i} className={`${s.dot} ${i === step ? s.dotOn : ''}`} />
+            <span key={i} className={mergeClasses(s.dot, i === step && s.dotOn)} />
           ))}
         </div>
 
@@ -581,9 +633,9 @@ export default function Onboarding() {
           {/* Step 5: account (before paywall) */}
           {step === 5 && (
             <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(6)}>Skip</button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(6)}>
-                {authView === 'signup' ? 'Create account' : 'Log in'} <ChevronRight16Regular />
+              <button className={mergeClasses(s.btn, s.btnSubtle)} onClick={() => go(6)} disabled={busy}>Skip</button>
+              <button className={mergeClasses(s.btn, s.btnPrimary)} onClick={submitAccount} disabled={busy}>
+                {busy ? 'Working...' : authView === 'signup' ? 'Create account' : 'Log in'} <ChevronRight16Regular />
               </button>
             </>
           )}
@@ -591,9 +643,9 @@ export default function Onboarding() {
           {/* Step 6: paywall */}
           {step === 6 && (
             <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => { setPlan('free'); go(7) }}>Maybe later</button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => { setPlan('pro'); go(7) }}>
-                {billing === 'yearly' ? 'Start free trial' : 'Subscribe'}
+              <button className={mergeClasses(s.btn, s.btnSubtle)} onClick={() => { setPlan('free'); go(7) }} disabled={busy}>Maybe later</button>
+              <button className={mergeClasses(s.btn, s.btnPrimary)} onClick={startCheckout} disabled={busy}>
+                {busy ? 'Opening checkout...' : billing === 'yearly' ? 'Start free trial' : 'Subscribe'}
               </button>
             </>
           )}

@@ -26,5 +26,11 @@ contextBridge.exposeInMainWorld('iretina', {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
     completeOnboarding: () => ipcRenderer.invoke('app:completeOnboarding'),
     setPlan: (plan: 'free' | 'pro') => ipcRenderer.invoke('app:setPlan', plan)
+  },
+  account: {
+    signUp: (email: string, password: string) => ipcRenderer.invoke('account:signUp', { email, password }),
+    login: (email: string, password: string) => ipcRenderer.invoke('account:login', { email, password }),
+    continueWithGoogle: () => ipcRenderer.invoke('account:google'),
+    startCheckout: (billing: 'yearly' | 'monthly') => ipcRenderer.invoke('account:startCheckout', { billing })
   }
 })

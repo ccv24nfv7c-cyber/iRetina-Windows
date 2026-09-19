@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen } from 'electron'
+import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell } from 'electron'
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 import { store } from './preferences'
@@ -20,6 +20,7 @@ let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let trayPopupWindow: BrowserWindow | null = null
 let onboardingWindow: BrowserWindow | null = null
+let checkoutWindow: BrowserWindow | null = null
 
 // --- Icon resolution (falls back gracefully if an asset is missing) ---
 const ASSETS_DIR = resolve(__dirname, '../../assets')
@@ -232,6 +233,101 @@ function closeTrayPopup() {
   trayPopupWindow = null
 }
 
+const API_BASE_URL = process.env.IRETINA_API_BASE_URL || ''
+
+function requireApiBase() {
+  if (!API_BASE_URL) {
+    throw new Error('Set IRETINA_API_BASE_URL to your iRetina backend before using accounts or Stripe.')
+  }
+  return API_BASE_URL.replace(/\/$/, '')
+}
+
+async function apiPost(path: string, body: Record<string, unknown>) {
+  const res = await fetch(`${requireApiBase()}${path}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(store.get('authToken') ? { authorization: `Bearer ${store.get('authToken')}` } : {})
+    },
+    body: JSON.stringify(body)
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(typeof data.message === 'string' ? data.message : `Request failed (${res.status})`)
+  }
+  return data as Record<string, unknown>
+}
+
+function saveAccount(data: Record<string, unknown>, fallbackEmail = '') {
+  if (typeof data.token === 'string') store.set('authToken', data.token)
+  if (typeof data.customerId === 'string') store.set('customerId', data.customerId)
+  if (typeof data.email === 'string') store.set('accountEmail', data.email)
+  else if (fallbackEmail) store.set('accountEmail', fallbackEmail)
+  if (data.plan === 'pro') store.set('plan', 'pro')
+}
+
+function createCheckoutWindow(url: string) {
+  if (checkoutWindow && !checkoutWindow.isDestroyed()) checkoutWindow.close()
+
+  return new Promise<{ ok: boolean; message?: string }>((resolveCheckout) => {
+    let settled = false
+    const settle = (result: { ok: boolean; message?: string }) => {
+      if (settled) return
+      settled = true
+      resolveCheckout(result)
+      if (checkoutWindow && !checkoutWindow.isDestroyed()) checkoutWindow.close()
+    }
+
+    checkoutWindow = new BrowserWindow({
+      width: 520,
+      height: 720,
+      minWidth: 460,
+      minHeight: 620,
+      title: 'iRetina Checkout',
+      parent: onboardingWindow ?? settingsWindow ?? undefined,
+      modal: Boolean(onboardingWindow ?? settingsWindow),
+      icon: getWindowIcon(),
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      }
+    })
+
+    const handleCheckoutUrl = (targetUrl: string) => {
+      if (targetUrl.startsWith('iretina://checkout/success')) {
+        store.set('plan', 'pro')
+        settle({ ok: true })
+        return true
+      }
+      if (targetUrl.startsWith('iretina://checkout/cancel')) {
+        settle({ ok: false, message: 'Checkout was canceled.' })
+        return true
+      }
+      return false
+    }
+
+    checkoutWindow.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+      if (handleCheckoutUrl(targetUrl)) return { action: 'deny' }
+      shell.openExternal(targetUrl)
+      return { action: 'deny' }
+    })
+    checkoutWindow.webContents.on('will-navigate', (event, targetUrl) => {
+      if (handleCheckoutUrl(targetUrl)) event.preventDefault()
+    })
+    checkoutWindow.webContents.on('will-redirect', (event, targetUrl) => {
+      if (handleCheckoutUrl(targetUrl)) event.preventDefault()
+    })
+    checkoutWindow.loadURL(url)
+    checkoutWindow.once('ready-to-show', () => checkoutWindow?.show())
+    checkoutWindow.on('closed', () => {
+      checkoutWindow = null
+      if (!settled) settle({ ok: false, message: 'Checkout window was closed.' })
+    })
+  })
+}
+
 // --- Setup tray ---
 function setupTray() {
   tray = new Tray(getTrayIcon())
@@ -305,6 +401,57 @@ function setupIPC() {
   })
 
   ipcMain.handle('app:getVersion', () => app.getVersion())
+
+  ipcMain.handle('account:signUp', async (_e, { email, password }: { email: string; password: string }) => {
+    try {
+      const data = await apiPost('/auth/signup', { email, password })
+      saveAccount(data, email)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Sign up failed.' }
+    }
+  })
+
+  ipcMain.handle('account:login', async (_e, { email, password }: { email: string; password: string }) => {
+    try {
+      const data = await apiPost('/auth/login', { email, password })
+      saveAccount(data, email)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Login failed.' }
+    }
+  })
+
+  ipcMain.handle('account:google', async () => {
+    try {
+      const data = await apiPost('/auth/google/start', {})
+      if (typeof data.url === 'string') {
+        await shell.openExternal(data.url)
+        return { ok: true }
+      }
+      return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
+    }
+  })
+
+  ipcMain.handle('account:startCheckout', async (_e, { billing }: { billing: 'yearly' | 'monthly' }) => {
+    try {
+      const data = await apiPost('/billing/checkout', {
+        billing,
+        customerId: store.get('customerId'),
+        email: store.get('accountEmail'),
+        successUrl: 'iretina://checkout/success',
+        cancelUrl: 'iretina://checkout/cancel'
+      })
+      if (typeof data.url !== 'string') {
+        return { ok: false, message: 'Stripe checkout did not return a checkout URL.' }
+      }
+      return await createCheckoutWindow(data.url)
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Checkout failed.' }
+    }
+  })
 
   ipcMain.on('overlay:finished', () => onOverlayFinished())
   ipcMain.on('overlay:skip', () => {

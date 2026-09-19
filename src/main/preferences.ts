@@ -17,6 +17,8 @@ interface Schema {
   plan: 'free' | 'pro'
   referralSource: string
   accountEmail: string
+  authToken: string
+  customerId: string
 }
 
 const defaults: Schema = {
@@ -35,7 +37,9 @@ const defaults: Schema = {
   onboardingComplete: false,
   plan: 'free',
   referralSource: '',
-  accountEmail: ''
+  accountEmail: '',
+  authToken: '',
+  customerId: ''
 }
 
 export const store = new Store<Schema>({ defaults })
