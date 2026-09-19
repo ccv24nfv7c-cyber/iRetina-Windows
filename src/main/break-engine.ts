@@ -1,4 +1,4 @@
-import { BrowserWindow, Notification, screen, desktopCapturer } from 'electron'
+import { BrowserWindow, Notification, screen } from 'electron'
 import { store } from './preferences'
 import { resolve } from 'path'
 
@@ -22,8 +22,6 @@ type BreakPayload = {
   strict: boolean
   soundEnabled: boolean
   isPrimary: boolean
-  /** Data-URL snapshot of this display, shown blurred behind the break UI. */
-  screenshot: string | null
 }
 let onStateChange: (() => void) | null = null
 
@@ -115,7 +113,7 @@ export function startBreak() {
   clearTimers()
   isBreakActive = true
   notify()
-  void showOverlay()
+  showOverlay()
 
   // Safety net: never let a break outlive its duration by more than 10s.
   const maxMs = store.get('breakDurationSec') * 1000 + 10_000
@@ -187,32 +185,9 @@ export function deactivateDND() {
   }
 }
 
-async function captureScreens(): Promise<Record<string, string>> {
-  const shots: Record<string, string> = {}
-  try {
-    // Capture a TINY snapshot per screen. Upscaling this small image to fill the
-    // display is what produces the frosted-glass blur - almost free on the GPU,
-    // unlike a large CSS blur() filter which can lag the whole machine.
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: { width: 384, height: 240 }
-    })
-    for (const src of sources) {
-      if (src.display_id && !src.thumbnail.isEmpty()) {
-        shots[src.display_id] = src.thumbnail.toDataURL()
-      }
-    }
-  } catch {
-    /* Screen capture unavailable (e.g. missing macOS permission) - fall back to
-       a solid dim background in the overlay. */
-  }
-  return shots
-}
-
-async function showOverlay() {
+function showOverlay() {
   const displays = screen.getAllDisplays()
   const primaryId = screen.getPrimaryDisplay().id
-  const shots = await captureScreens()
 
   overlayWindows = displays.map((display) => {
     const isPrimary = display.id === primaryId
@@ -220,8 +195,7 @@ async function showOverlay() {
       durationSec: store.get('breakDurationSec'),
       strict: store.get('strictBreakModeEnabled'),
       soundEnabled: store.get('soundEnabled'),
-      isPrimary,
-      screenshot: shots[String(display.id)] ?? null
+      isPrimary
     }
 
     const win = new BrowserWindow({
@@ -247,6 +221,12 @@ async function showOverlay() {
         nodeIntegration: false
       }
     })
+
+    // Windows 11 acrylic: a native, GPU-cheap blur of the desktop behind the
+    // (semi-transparent) overlay. Far lighter than any CSS blur.
+    if (process.platform === 'win32') {
+      win.setBackgroundMaterial('acrylic')
+    }
 
     if (process.platform === 'darwin') {
       win.setSimpleFullScreen(true)

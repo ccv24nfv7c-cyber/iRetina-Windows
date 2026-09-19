@@ -12,7 +12,6 @@ declare global {
           strict: boolean
           soundEnabled: boolean
           isPrimary: boolean
-          screenshot: string | null
         }) => void
       ) => void
       finished: () => void
@@ -49,7 +48,6 @@ function OverlayApp(): React.JSX.Element {
   const [quote] = useState(() => pick(quotes))
   const [subtitle] = useState(() => pick(subtitles))
   const [now, setNow] = useState(() => new Date())
-  const [screenshot, setScreenshot] = useState<string | null>(null)
 
   const soundRef = useRef(true)
   const primaryRef = useRef(true)
@@ -71,13 +69,12 @@ function OverlayApp(): React.JSX.Element {
 
   // --- Receive break parameters from the main process ---
   useEffect(() => {
-    window.overlayBridge.onStart(({ durationSec: d, strict: s, soundEnabled, isPrimary, screenshot: shot }) => {
+    window.overlayBridge.onStart(({ durationSec: d, strict: s, soundEnabled, isPrimary }) => {
       soundRef.current = soundEnabled
       primaryRef.current = isPrimary
       setDurationSec(d)
       setRemaining(d)
       setStrict(s)
-      setScreenshot(shot)
       // Two frames so the browser paints the hidden state first, then one
       // single fade+rise into view (no second content animation afterwards).
       requestAnimationFrame(() =>
@@ -165,7 +162,10 @@ function OverlayApp(): React.JSX.Element {
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#0b0d12',
+        // Semi-transparent dark tint. On Windows the acrylic material blurs the
+        // desktop behind it; a touch of the real screen shows through the tint.
+        background:
+          'linear-gradient(180deg, rgba(10,12,18,0.66) 0%, rgba(8,10,14,0.74) 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -182,35 +182,6 @@ function OverlayApp(): React.JSX.Element {
         userSelect: 'none'
       }}
     >
-      {/* Frosted snapshot of the user's own screen. The source image is tiny
-          (see break-engine) so the browser's upscaling does the blurring for
-          free; only a small filter blur is added to smooth it. This avoids the
-          heavy GPU cost of a large blur() on a full-resolution image. */}
-      {screenshot && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `url(${screenshot})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(8px) saturate(1.1)',
-            transform: 'scale(1.05)',
-            pointerEvents: 'none'
-          }}
-        />
-      )}
-      {/* Scrim for legibility + a soft top-down darkening. */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'linear-gradient(180deg, rgba(8,10,15,0.62) 0%, rgba(8,10,15,0.72) 100%)',
-          pointerEvents: 'none'
-        }}
-      />
-
       {/* Wall clock */}
       <div
         style={{
