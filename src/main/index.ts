@@ -233,7 +233,10 @@ function closeTrayPopup() {
   trayPopupWindow = null
 }
 
-const API_BASE_URL = process.env.IRETINA_API_BASE_URL || ''
+// The hosted backend (Supabase Edge Functions). Not a secret — it's the public
+// API endpoint. An env var still overrides it for local development.
+const DEFAULT_API_BASE_URL = 'https://ekrknhbtgwkmzwkgzzez.supabase.co/functions/v1/api'
+const API_BASE_URL = process.env.IRETINA_API_BASE_URL || DEFAULT_API_BASE_URL
 
 function requireApiBase() {
   if (!API_BASE_URL) {
