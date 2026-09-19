@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { makeStyles } from '@fluentui/react-components'
+import { makeStyles, mergeClasses } from '@fluentui/react-components'
 import {
   Checkmark12Filled,
   Checkmark20Filled,
@@ -11,23 +11,7 @@ import Logo from './Logo'
 import { DUR, EASE } from './motion'
 
 /* ----------------------------- illustrations ----------------------------- */
-/* Simple, crisp inline SVGs — far nicer than generic monoline glyphs. */
-
-function ArtEye() {
-  return (
-    <svg width="76" height="76" viewBox="0 0 76 76" fill="none" aria-hidden>
-      <circle cx="38" cy="38" r="37" fill="var(--accent-soft)" />
-      <path
-        d="M18 38c6.5-9 33.5-9 40 0-6.5 9-33.5 9-40 0Z"
-        stroke="var(--accent)"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <circle cx="38" cy="38" r="7.5" fill="var(--accent)" />
-      <circle cx="35.6" cy="35.6" r="2.4" fill="#fff" />
-    </svg>
-  )
-}
+/* Clean inline SVGs. Deliberately NOT eyes. */
 
 function ArtClock() {
   return (
@@ -39,18 +23,31 @@ function ArtClock() {
   )
 }
 
-function ArtRest() {
+function ArtTune() {
+  return (
+    <svg width="76" height="76" viewBox="0 0 76 76" fill="none" aria-hidden>
+      <circle cx="38" cy="38" r="37" fill="var(--accent-soft)" />
+      <g stroke="var(--accent)" strokeWidth="3" strokeLinecap="round">
+        <path d="M24 31h28" />
+        <path d="M24 45h28" />
+      </g>
+      <circle cx="34" cy="31" r="5" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="3" />
+      <circle cx="44" cy="45" r="5" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="3" />
+    </svg>
+  )
+}
+
+function ArtChat() {
   return (
     <svg width="76" height="76" viewBox="0 0 76 76" fill="none" aria-hidden>
       <circle cx="38" cy="38" r="37" fill="var(--accent-soft)" />
       <path
-        d="M25 38c4.4-6 21.6-6 26 0-4.4 6-21.6 6-26 0Z"
+        d="M23 30a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H34l-8 7v-7h1a4 4 0 0 1-5-4V30Z"
         stroke="var(--accent)"
         strokeWidth="3"
         strokeLinejoin="round"
       />
-      <path d="M31 38h14" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M50 24l3-4M56 30l4-2" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
+      <path d="M31 36h14M31 41h9" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
     </svg>
   )
 }
@@ -84,7 +81,7 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '40px 60px 20px',
+    padding: '36px 60px 18px',
     textAlign: 'center',
     boxSizing: 'border-box',
     overflowY: 'auto'
@@ -95,16 +92,15 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '24px',
+    marginBottom: '22px',
     borderRadius: '50%',
     background:
-      'radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 68%)'
+      'radial-gradient(circle, color-mix(in srgb, var(--accent) 24%, transparent) 0%, transparent 68%)'
   },
-  art: { marginBottom: '22px' },
+  art: { marginBottom: '20px' },
   title: { fontSize: '27px', fontWeight: '650', letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: '10px' },
-  lede: { fontSize: '14.5px', lineHeight: 1.6, color: 'var(--text-dim)', maxWidth: '430px' },
+  lede: { fontSize: '14.5px', lineHeight: 1.6, color: 'var(--text-dim)', maxWidth: '440px' },
 
-  // Welcome benefit bullets
   benefits: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '26px', width: '100%', maxWidth: '360px', textAlign: 'left' },
   benefit: { display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: 'var(--text)' },
   benefitTick: {
@@ -113,17 +109,14 @@ const useStyles = makeStyles({
     background: 'var(--accent)', color: 'var(--on-accent)', fontSize: '11px'
   },
 
-  // Cards / rows (customize)
   card: {
-    marginTop: '28px', width: '100%', maxWidth: '440px',
+    marginTop: '26px', width: '100%', maxWidth: '440px',
     background: 'var(--surface)', border: '1px solid var(--border)',
     borderRadius: '10px', boxShadow: 'var(--shadow-sm)', overflow: 'hidden', textAlign: 'left'
   },
   row: { display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 20px' },
   rowDivider: { borderTop: '1px solid var(--border)' },
   rowText: { display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: '14px', fontWeight: '600' },
-  rowDesc: { fontSize: '12px', color: 'var(--text-mute)', lineHeight: 1.4 },
   fieldLabel: { fontSize: '13px', fontWeight: '600', marginBottom: '10px' },
   seg: { display: 'flex', gap: '8px' },
   choice: {
@@ -136,29 +129,88 @@ const useStyles = makeStyles({
   choiceOn: { border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)' },
   choiceSub: { display: 'block', fontSize: '11px', fontWeight: '400', color: 'var(--text-mute)', marginTop: '3px' },
 
-  // Try-your-break screen
-  tryPreview: {
-    marginTop: '26px', width: '100%', maxWidth: '380px', height: '150px', borderRadius: '14px',
-    border: '1px solid var(--border)',
-    background: 'linear-gradient(160deg, #12161f 0%, #0b0e15 100%)',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
-    boxShadow: 'var(--shadow-sm)'
+  // Try-your-break: a large, appealing preview of the real break screen.
+  // Mirrors the real break screen: a dark frosted tint over a softly blurred
+  // desktop (represented here with out-of-focus colour blobs).
+  preview: {
+    position: 'relative',
+    marginTop: '24px', width: '100%', maxWidth: '420px', height: '190px', borderRadius: '16px',
+    overflow: 'hidden',
+    background: [
+      'linear-gradient(180deg, rgba(12,15,22,0.60) 0%, rgba(9,11,16,0.70) 100%)',
+      'radial-gradient(circle at 24% 22%, rgba(96,165,250,0.60), transparent 46%)',
+      'radial-gradient(circle at 82% 78%, rgba(45,212,191,0.45), transparent 46%)',
+      'radial-gradient(circle at 62% 42%, rgba(168,85,247,0.38), transparent 50%)',
+      '#12151d'
+    ].join(', '),
+    border: '1px solid rgba(255,255,255,0.10)',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.28)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px'
   },
-  tryRing: {
-    width: '58px', height: '58px', borderRadius: '50%',
-    border: '4px solid rgba(255,255,255,0.14)', borderTopColor: 'var(--accent)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '13px', fontWeight: '700', color: '#fff'
+  previewGlow: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    backdropFilter: 'blur(2px)'
   },
-  tryCaption: { fontSize: '12px', color: 'rgba(255,255,255,0.6)' },
+  previewRing: {
+    width: '78px', height: '78px', borderRadius: '50%',
+    border: '5px solid rgba(255,255,255,0.12)', borderTopColor: '#60CDFF', borderRightColor: '#60CDFF',
+    transform: 'rotate(45deg)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1
+  },
+  previewTime: { transform: 'rotate(-45deg)', fontSize: '17px', fontWeight: '700', color: '#fff', fontVariantNumeric: 'tabular-nums' },
+  previewText: { fontSize: '15px', fontWeight: '600', color: '#ffffff', textShadow: '0 1px 8px rgba(0,0,0,0.55)', zIndex: 1 },
+  previewSub: { fontSize: '11.5px', color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 6px rgba(0,0,0,0.5)', zIndex: 1 },
   tryBtn: {
     display: 'inline-flex', alignItems: 'center', gap: '9px', marginTop: '22px',
-    height: '42px', padding: '0 24px', borderRadius: '9px', border: '1px solid transparent',
+    height: '44px', padding: '0 26px', borderRadius: '10px', border: '1px solid transparent',
     background: 'var(--accent)', color: 'var(--on-accent)', fontFamily: 'inherit',
-    fontSize: '14.5px', fontWeight: '600', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+    fontSize: '15px', fontWeight: '600', cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
     transition: `background ${DUR.fast}ms ${EASE.standard}, transform ${DUR.faster}ms ${EASE.standard}`,
     ':hover': { background: 'var(--accent-hover)' },
     ':active': { transform: 'scale(0.97)' }
+  },
+
+  // Referral / account option lists
+  optList: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '360px', marginTop: '24px' },
+  optItem: {
+    display: 'flex', alignItems: 'center', gap: '11px', padding: '13px 16px', borderRadius: '9px',
+    border: '1px solid var(--border-strong)', background: 'var(--surface)', color: 'var(--text)',
+    fontFamily: 'inherit', fontSize: '14px', fontWeight: '600', cursor: 'pointer', textAlign: 'left',
+    transition: `background ${DUR.fast}ms ${EASE.standard}, border-color ${DUR.fast}ms ${EASE.standard}`,
+    ':hover': { background: 'var(--surface-hover)' }
+  },
+  optItemOn: { border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)' },
+  optRadio: {
+    width: '18px', height: '18px', borderRadius: '50%', border: '2px solid var(--border-strong)', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center'
+  },
+  optRadioOn: { border: '2px solid var(--accent)' },
+  optDot: { width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' },
+
+  // Account
+  form: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '340px', marginTop: '22px' },
+  input: {
+    width: '100%', height: '44px', padding: '0 14px', borderRadius: '8px',
+    border: '1px solid var(--border-strong)', background: 'var(--surface)', color: 'var(--text)',
+    fontFamily: 'inherit', fontSize: '14px', boxSizing: 'border-box', outline: 'none',
+    ':focus': { border: '1px solid var(--accent)' }
+  },
+  googleBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', maxWidth: '340px',
+    height: '44px', marginTop: '12px', borderRadius: '8px', border: '1px solid var(--border-strong)',
+    background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: '14px', fontWeight: '600',
+    cursor: 'pointer', transition: `background ${DUR.fast}ms ${EASE.standard}`,
+    ':hover': { background: 'var(--surface-hover)' }
+  },
+  divider: {
+    display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '340px', margin: '14px 0 2px',
+    color: 'var(--text-mute)', fontSize: '11px', fontWeight: '600'
+  },
+  dividerLine: { flex: 1, height: '1px', background: 'var(--border)' },
+  authSwitch: { marginTop: '16px', fontSize: '13px', color: 'var(--text-dim)' },
+  authLink: {
+    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+    color: 'var(--accent)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '600'
   },
 
   // Paywall
@@ -169,30 +221,22 @@ const useStyles = makeStyles({
     fontSize: '11px', fontWeight: '700', letterSpacing: '0.06em', textTransform: 'uppercase'
   },
   billingToggle: {
-    display: 'flex', gap: '4px', marginTop: '22px', padding: '4px',
-    background: 'var(--surface-2)', borderRadius: '10px', border: '1px solid var(--border)'
+    display: 'flex', gap: '6px', marginTop: '22px', padding: '5px',
+    background: 'var(--surface-2)', borderRadius: '11px', border: '1px solid var(--border)'
   },
   billBtn: {
-    display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 18px', borderRadius: '7px',
-    border: 'none', background: 'transparent', color: 'var(--text-dim)',
+    display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 20px', borderRadius: '8px',
+    border: '1px solid transparent', background: 'transparent', color: 'var(--text-dim)',
     fontFamily: 'inherit', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
     transition: `background ${DUR.fast}ms ${EASE.standard}, color ${DUR.fast}ms ${EASE.standard}`
   },
-  billBtnOn: { background: 'var(--surface)', color: 'var(--text)', boxShadow: 'var(--shadow-sm)' },
+  billBtnOn: { background: 'var(--accent)', color: 'var(--on-accent)', boxShadow: 'var(--shadow-sm)' },
   saveBadge: {
-    padding: '1px 7px', borderRadius: '20px', background: 'var(--accent)', color: 'var(--on-accent)',
+    padding: '2px 8px', borderRadius: '20px', background: 'var(--accent)', color: 'var(--on-accent)',
     fontSize: '10px', fontWeight: '700'
   },
-  priceBlock: { display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '24px' },
-  priceNum: { fontSize: '46px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
-  pricePer: { fontSize: '14px', fontWeight: '400', color: 'var(--text-mute)' },
-  trialNote: { fontSize: '13px', color: 'var(--accent)', fontWeight: '600', marginTop: '10px' },
-  perks: { display: 'flex', flexDirection: 'column', gap: '11px', marginTop: '22px', width: '100%', maxWidth: '340px', textAlign: 'left' },
-  perk: { display: 'flex', alignItems: 'center', gap: '11px', fontSize: '13.5px' },
-  perkCheck: {
-    width: '19px', height: '19px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px'
-  },
+  // On the selected (accent) button, flip the badge to a white pill so it stays readable.
+  saveBadgeOn: { background: '#ffffff', color: 'var(--accent)' },
   planCard: {
     marginTop: '20px', width: '100%', maxWidth: '380px',
     background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
@@ -204,18 +248,25 @@ const useStyles = makeStyles({
     borderBottom: '1px solid var(--border)'
   },
   planPrice: { display: 'flex', alignItems: 'baseline', gap: '6px' },
+  priceNum: { fontSize: '40px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
+  pricePer: { fontSize: '14px', fontWeight: '400', color: 'var(--text-mute)' },
+  trialNote: { fontSize: '13px', color: 'var(--accent)', fontWeight: '600', marginTop: '10px' },
   planPerks: { padding: '16px 20px 18px' },
+  perks: { display: 'flex', flexDirection: 'column', gap: '11px' },
+  perk: { display: 'flex', alignItems: 'center', gap: '11px', fontSize: '13.5px' },
+  perkCheck: {
+    width: '19px', height: '19px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px'
+  },
 
   // All-set
   successCircle: {
-    width: '84px', height: '84px', borderRadius: '50%', marginBottom: '24px',
+    width: '84px', height: '84px', borderRadius: '50%', marginBottom: '22px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'var(--accent)', color: 'var(--on-accent)', fontSize: '38px',
     boxShadow: '0 8px 24px color-mix(in srgb, var(--accent) 34%, transparent)'
   },
-  summary: {
-    display: 'flex', gap: '10px', marginTop: '26px', width: '100%', maxWidth: '380px'
-  },
+  summary: { display: 'flex', gap: '10px', marginTop: '26px', width: '100%', maxWidth: '380px' },
   summaryCell: {
     flex: 1, padding: '14px 10px', borderRadius: '10px',
     background: 'var(--surface)', border: '1px solid var(--border)',
@@ -224,38 +275,12 @@ const useStyles = makeStyles({
   summaryNum: { fontSize: '18px', fontWeight: '700', color: 'var(--text)', letterSpacing: '-0.01em' },
   summaryLabel: { fontSize: '11px', color: 'var(--text-mute)', fontWeight: '600' },
 
-  // Account / login
-  form: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '340px', marginTop: '24px' },
-  input: {
-    width: '100%', height: '44px', padding: '0 14px', borderRadius: '8px',
-    border: '1px solid var(--border-strong)', background: 'var(--surface)', color: 'var(--text)',
-    fontFamily: 'inherit', fontSize: '14px', boxSizing: 'border-box', outline: 'none',
-    ':focus': { border: '1px solid var(--accent)' }
-  },
-  googleBtn: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', maxWidth: '340px',
-    height: '44px', marginTop: '14px', borderRadius: '8px', border: '1px solid var(--border-strong)',
-    background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: '14px', fontWeight: '600',
-    cursor: 'pointer', transition: `background ${DUR.fast}ms ${EASE.standard}`,
-    ':hover': { background: 'var(--surface-hover)' }
-  },
-  divider: {
-    display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '340px', margin: '16px 0 2px',
-    color: 'var(--text-mute)', fontSize: '11px', fontWeight: '600'
-  },
-  dividerLine: { flex: 1, height: '1px', background: 'var(--border)' },
-  authSwitch: { marginTop: '18px', fontSize: '13px', color: 'var(--text-dim)' },
-  authLink: {
-    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-    color: 'var(--accent)', fontFamily: 'inherit', fontSize: '13px', fontWeight: '600'
-  },
-
   // Footer
   footer: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '18px 26px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', gap: '12px'
   },
-  dots: { display: 'flex', gap: '7px' },
+  dots: { display: 'flex', gap: '6px' },
   dot: {
     width: '7px', height: '7px', borderRadius: '50%', background: 'var(--border-strong)',
     transition: `width ${DUR.normal}ms ${EASE.decel}, background ${DUR.normal}ms ${EASE.decel}`
@@ -295,7 +320,9 @@ const BENEFITS = [
   'Follows the doctor-recommended 20-20-20 rule',
   'Stays quietly in your tray until you need it'
 ]
-const TOTAL = 7 // 0 welcome · 1 how · 2 customize · 3 try · 4 account · 5 paywall · 6 all-set
+const REFERRALS = ['TikTok', 'X (Twitter)', 'Google', 'Posters', 'Other']
+// 0 welcome · 1 how · 2 rhythm · 3 try · 4 referral · 5 account · 6 paywall · 7 all-set
+const TOTAL = 8
 
 export default function Onboarding() {
   const s = useStyles()
@@ -304,6 +331,7 @@ export default function Onboarding() {
   const [interval, setInterval] = useState(20)
   const [duration, setDuration] = useState(30)
   const [launch] = useState(true)
+  const [referral, setReferral] = useState('')
   const [billing, setBilling] = useState<'yearly' | 'monthly'>('yearly')
   const [plan, setPlan] = useState<'free' | 'pro'>('free')
   const [authView, setAuthView] = useState<'signup' | 'login'>('signup')
@@ -318,6 +346,7 @@ export default function Onboarding() {
   async function finish(chosen: 'free' | 'pro') {
     await window.iretina.app.setLoginItem(launch)
     await window.iretina.prefs.set('launchAtLogin', launch)
+    await window.iretina.prefs.set('referralSource', referral)
     await window.iretina.prefs.set('accountEmail', email.trim())
     await window.iretina.app.setPlan(chosen)
     await window.iretina.app.completeOnboarding()
@@ -345,16 +374,13 @@ export default function Onboarding() {
         <div key={step} className={s.step} style={{ animation: stepAnim }}>
           {step === 0 && (
             <>
-              <div className={s.logoHalo} style={rise(0)}><Logo size={100} /></div>
+              <div className={s.logoHalo} style={rise(0)}><Logo size={104} /></div>
               <div className={s.title} style={rise(1)}>Welcome to iRetina</div>
-              <div className={s.lede} style={rise(2)}>
-                Give your eyes the breaks they need, without thinking about it.
-              </div>
+              <div className={s.lede} style={rise(2)}>Give your eyes the breaks they need, without thinking about it.</div>
               <div className={s.benefits} style={rise(3)}>
                 {BENEFITS.map((b) => (
                   <div key={b} className={s.benefit}>
-                    <span className={s.benefitTick}><Checkmark12Filled /></span>
-                    {b}
+                    <span className={s.benefitTick}><Checkmark12Filled /></span>{b}
                   </div>
                 ))}
               </div>
@@ -363,7 +389,7 @@ export default function Onboarding() {
 
           {step === 1 && (
             <>
-              <div className={s.art} style={rise(0)}><ArtEye /></div>
+              <div className={s.art} style={rise(0)}><ArtClock /></div>
               <div className={s.title} style={rise(1)}>The 20-20-20 rule</div>
               <div className={s.lede} style={rise(2)}>
                 Every 20 minutes, look at something about 20 feet away for 20
@@ -375,19 +401,16 @@ export default function Onboarding() {
 
           {step === 2 && (
             <>
-              <div className={s.art} style={rise(0)}><ArtClock /></div>
+              <div className={s.art} style={rise(0)}><ArtTune /></div>
               <div className={s.title} style={rise(1)}>Set your rhythm</div>
-              <div className={s.lede} style={rise(2)}>
-                Pick how often you’d like a break and how long it should last. You
-                can change these anytime.
-              </div>
+              <div className={s.lede} style={rise(2)}>Pick how often you’d like a break and how long it should last. You can change these anytime.</div>
               <div className={s.card} style={rise(3)}>
                 <div className={s.row}>
                   <div className={s.rowText}>
                     <div className={s.fieldLabel}>Break every</div>
                     <div className={s.seg}>
                       {INTERVALS.map((o) => (
-                        <button key={o.v} className={`${s.choice} ${interval === o.v ? s.choiceOn : ''}`} onClick={() => setInterval(o.v)}>
+                        <button key={o.v} className={mergeClasses(s.choice, interval === o.v && s.choiceOn)} onClick={() => setInterval(o.v)}>
                           {o.label}<span className={s.choiceSub}>{o.sub}</span>
                         </button>
                       ))}
@@ -399,7 +422,7 @@ export default function Onboarding() {
                     <div className={s.fieldLabel}>Break lasts</div>
                     <div className={s.seg}>
                       {DURATIONS.map((o) => (
-                        <button key={o.v} className={`${s.choice} ${duration === o.v ? s.choiceOn : ''}`} onClick={() => setDuration(o.v)}>
+                        <button key={o.v} className={mergeClasses(s.choice, duration === o.v && s.choiceOn)} onClick={() => setDuration(o.v)}>
                           {o.label}<span className={s.choiceSub}>{o.sub}</span>
                         </button>
                       ))}
@@ -412,78 +435,85 @@ export default function Onboarding() {
 
           {step === 3 && (
             <>
-              <div className={s.art} style={rise(0)}><ArtRest /></div>
-              <div className={s.title} style={rise(1)}>Try a break</div>
-              <div className={s.lede} style={rise(2)}>
-                Here’s exactly what you’ll see when it’s time to rest. Give it a go —
-                the break screen appears now and you can dismiss it anytime.
+              <div className={s.title} style={rise(0)}>Try your first break</div>
+              <div className={s.lede} style={rise(1)}>
+                This is exactly what you’ll see when it’s time to rest. Give it a go: it appears now and you can dismiss it anytime.
               </div>
-              <div className={s.tryPreview} style={rise(3)}>
-                <div className={s.tryRing}>0:20</div>
-                <div className={s.tryCaption}>Look into the distance</div>
+              <div className={s.preview} style={rise(2)}>
+                <div className={s.previewGlow} />
+                <div className={s.previewRing}><span className={s.previewTime}>0:20</span></div>
+                <div className={s.previewText}>Look into the distance</div>
+                <div className={s.previewSub}>Rest your eyes for 20 seconds</div>
               </div>
-              <button className={s.tryBtn} style={rise(4)} onClick={tryBreak}>
+              <button className={s.tryBtn} style={rise(3)} onClick={tryBreak}>
                 <Play20Filled /> Try it now
               </button>
             </>
           )}
 
-          {step === 4 && authView === 'signup' && (
+          {step === 4 && (
             <>
-              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={62} /></div>
+              <div className={s.art} style={rise(0)}><ArtChat /></div>
+              <div className={s.title} style={rise(1)}>Where did you hear about us?</div>
+              <div className={s.lede} style={rise(2)}>It helps us reach more people who need their eyes looked after. Optional.</div>
+              <div className={s.optList} style={rise(3)}>
+                {REFERRALS.map((r) => {
+                  const on = referral === r
+                  return (
+                    <button key={r} className={mergeClasses(s.optItem, on && s.optItemOn)} onClick={() => setReferral(r)}>
+                      <span className={`${s.optRadio} ${on ? s.optRadioOn : ''}`}>{on && <span className={s.optDot} />}</span>
+                      {r}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {step === 5 && authView === 'signup' && (
+            <>
+              <div className={s.logoHalo} style={{ ...rise(0), width: 92, height: 92, marginBottom: 14 }}><Logo size={58} /></div>
               <div className={s.title} style={rise(1)}>Create your account</div>
-              <div className={s.lede} style={rise(2)}>
-                So your plan and settings follow you to any device. You can skip this for now.
-              </div>
-              <button className={s.googleBtn} style={rise(3)}>
-                <GoogleG /> Continue with Google
-              </button>
-              <div className={s.divider} style={rise(3)}>
-                <span className={s.dividerLine} /> OR <span className={s.dividerLine} />
-              </div>
+              <div className={s.lede} style={rise(2)}>So your plan and settings follow you to any device. You can skip this for now.</div>
+              <button className={s.googleBtn} style={rise(3)}><GoogleG /> Continue with Google</button>
+              <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input className={s.input} type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 <input className={s.input} type="password" autoComplete="new-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <div className={s.authSwitch} style={rise(5)}>
-                Already have an account?{' '}
-                <button className={s.authLink} onClick={() => setAuthView('login')}>Log in</button>
+                Already have an account? <button className={s.authLink} onClick={() => setAuthView('login')}>Log in</button>
               </div>
             </>
           )}
 
-          {step === 4 && authView === 'login' && (
+          {step === 5 && authView === 'login' && (
             <>
-              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={62} /></div>
+              <div className={s.logoHalo} style={{ ...rise(0), width: 92, height: 92, marginBottom: 14 }}><Logo size={58} /></div>
               <div className={s.title} style={rise(1)}>Welcome back</div>
               <div className={s.lede} style={rise(2)}>Log in to restore your iRetina Pro plan and settings.</div>
-              <button className={s.googleBtn} style={rise(3)}>
-                <GoogleG /> Continue with Google
-              </button>
-              <div className={s.divider} style={rise(3)}>
-                <span className={s.dividerLine} /> OR <span className={s.dividerLine} />
-              </div>
+              <button className={s.googleBtn} style={rise(3)}><GoogleG /> Continue with Google</button>
+              <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input className={s.input} type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 <input className={s.input} type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <div className={s.authSwitch} style={rise(5)}>
-                New to iRetina?{' '}
-                <button className={s.authLink} onClick={() => setAuthView('signup')}>Create an account</button>
+                New to iRetina? <button className={s.authLink} onClick={() => setAuthView('signup')}>Create an account</button>
               </div>
             </>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <>
               <div className={s.proPill} style={rise(0)}>iRetina Pro</div>
               <div className={s.title} style={rise(1)}>Choose your plan</div>
               <div className={s.lede} style={rise(2)}>Everything iRetina offers, to keep your eyes at their best.</div>
               <div className={s.billingToggle} style={rise(2)}>
-                <button className={`${s.billBtn} ${billing === 'yearly' ? s.billBtnOn : ''}`} onClick={() => setBilling('yearly')}>
-                  Yearly <span className={s.saveBadge}>7-day free trial</span>
+                <button className={mergeClasses(s.billBtn, billing === 'yearly' && s.billBtnOn)} onClick={() => setBilling('yearly')}>
+                  Yearly <span className={mergeClasses(s.saveBadge, billing === 'yearly' && s.saveBadgeOn)}>7-day free trial</span>
                 </button>
-                <button className={`${s.billBtn} ${billing === 'monthly' ? s.billBtnOn : ''}`} onClick={() => setBilling('monthly')}>
+                <button className={mergeClasses(s.billBtn, billing === 'monthly' && s.billBtnOn)} onClick={() => setBilling('monthly')}>
                   Monthly
                 </button>
               </div>
@@ -494,13 +524,11 @@ export default function Onboarding() {
                     <span className={s.pricePer}>{per}</span>
                   </div>
                   <div className={s.trialNote}>
-                    {billing === 'yearly'
-                      ? '7 days free, then billed yearly. Cancel anytime.'
-                      : 'Billed monthly. Cancel anytime.'}
+                    {billing === 'yearly' ? '7 days free, then billed yearly. Cancel anytime.' : 'Billed monthly. Cancel anytime.'}
                   </div>
                 </div>
                 <div className={s.planPerks}>
-                  <div className={s.perks} style={{ marginTop: 0, maxWidth: 'none' }}>
+                  <div className={s.perks}>
                     {PERKS.map((p) => (
                       <div key={p} className={s.perk}>
                         <span className={s.perkCheck}><Checkmark12Filled /></span>{p}
@@ -512,27 +540,17 @@ export default function Onboarding() {
             </>
           )}
 
-          {step === 6 && (
+          {step === 7 && (
             <>
               <div className={s.successCircle} style={rise(0)}><Checkmark20Filled /></div>
               <div className={s.title} style={rise(1)}>You’re all set</div>
               <div className={s.lede} style={rise(2)}>
-                iRetina is running in your system tray and will gently remind you to
-                rest your eyes. Change anything anytime from Settings.
+                iRetina is running in your system tray and will gently remind you to rest your eyes. Change anything anytime from Settings.
               </div>
               <div className={s.summary} style={rise(3)}>
-                <div className={s.summaryCell}>
-                  <span className={s.summaryNum}>{interval}m</span>
-                  <span className={s.summaryLabel}>Between breaks</span>
-                </div>
-                <div className={s.summaryCell}>
-                  <span className={s.summaryNum}>{duration}s</span>
-                  <span className={s.summaryLabel}>Break length</span>
-                </div>
-                <div className={s.summaryCell}>
-                  <span className={s.summaryNum}>{plan === 'pro' ? 'Pro' : 'Free'}</span>
-                  <span className={s.summaryLabel}>Your plan</span>
-                </div>
+                <div className={s.summaryCell}><span className={s.summaryNum}>{interval}m</span><span className={s.summaryLabel}>Between breaks</span></div>
+                <div className={s.summaryCell}><span className={s.summaryNum}>{duration}s</span><span className={s.summaryLabel}>Break length</span></div>
+                <div className={s.summaryCell}><span className={s.summaryNum}>{plan === 'pro' ? 'Pro' : 'Free'}</span><span className={s.summaryLabel}>Your plan</span></div>
               </div>
             </>
           )}
@@ -547,46 +565,42 @@ export default function Onboarding() {
         </div>
 
         <div className={s.footerRight}>
-          {step > 0 && step < 6 && (
+          {step > 0 && step < 7 && (
             <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(step - 1)}>
               <ChevronLeft16Regular /> Back
             </button>
           )}
 
-          {/* Steps 0-3: plain continue */}
-          {step < 4 && (
+          {/* Steps 0-4: continue */}
+          {step < 5 && (
             <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(step + 1)}>
               {step === 0 ? 'Get started' : 'Continue'} <ChevronRight16Regular />
             </button>
           )}
 
-          {/* Step 4: account (before paywall) */}
-          {step === 4 && (
+          {/* Step 5: account (before paywall) */}
+          {step === 5 && (
             <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(5)}>Skip</button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(5)}>
+              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(6)}>Skip</button>
+              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(6)}>
                 {authView === 'signup' ? 'Create account' : 'Log in'} <ChevronRight16Regular />
               </button>
             </>
           )}
 
-          {/* Step 5: paywall */}
-          {step === 5 && (
+          {/* Step 6: paywall */}
+          {step === 6 && (
             <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => { setPlan('free'); go(6) }}>
-                Maybe later
-              </button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => { setPlan('pro'); go(6) }}>
+              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => { setPlan('free'); go(7) }}>Maybe later</button>
+              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => { setPlan('pro'); go(7) }}>
                 {billing === 'yearly' ? 'Start free trial' : 'Subscribe'}
               </button>
             </>
           )}
 
-          {/* Step 6: all set */}
-          {step === 6 && (
-            <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => finish(plan)}>
-              Start using iRetina
-            </button>
+          {/* Step 7: all set */}
+          {step === 7 && (
+            <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => finish(plan)}>Start using iRetina</button>
           )}
         </div>
       </div>
