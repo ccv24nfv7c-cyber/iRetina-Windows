@@ -8,14 +8,17 @@ import { Btn } from './pages/ui'
 
 const useStyles = makeStyles({
   root: {
-    width: '100%',
-    height: '100%',
+    // Slightly inset from the transparent window so the shadow renders and the
+    // rounded corners sit on real transparency (no white square corners).
+    width: 'calc(100% - 12px)',
+    height: 'calc(100% - 12px)',
+    margin: '6px',
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
     background: 'var(--surface)',
     border: '1px solid var(--border-strong)',
-    borderRadius: '14px',
+    borderRadius: '12px',
     boxShadow: 'var(--shadow)',
     overflow: 'hidden',
     color: 'var(--text)',

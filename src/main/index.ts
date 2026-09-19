@@ -196,9 +196,10 @@ function createTrayPopup() {
     }
   })
 
-  if (process.platform === 'win32') {
-    trayPopupWindow.setBackgroundMaterial('acrylic')
-  }
+  // No background material here: acrylic fills the whole rectangular window,
+  // including the corner triangles outside the card's border-radius, which shows
+  // up as white square corners. A plain transparent window lets the rounded card
+  // float cleanly with real transparent corners.
 
   if (process.env['ELECTRON_RENDERER_URL']) {
     trayPopupWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '?popup=1')

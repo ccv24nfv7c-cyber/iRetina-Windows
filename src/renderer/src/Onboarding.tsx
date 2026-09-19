@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { makeStyles } from '@fluentui/react-components'
 import {
   Checkmark12Filled,
+  Checkmark20Filled,
   ChevronRight16Regular,
   ChevronLeft16Regular,
   Play20Filled
@@ -192,6 +193,36 @@ const useStyles = makeStyles({
     width: '19px', height: '19px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px'
   },
+  planCard: {
+    marginTop: '20px', width: '100%', maxWidth: '380px',
+    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
+    boxShadow: 'var(--shadow-sm)', overflow: 'hidden', textAlign: 'left'
+  },
+  planHead: {
+    padding: '18px 20px 16px',
+    background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%, var(--surface) 100%)',
+    borderBottom: '1px solid var(--border)'
+  },
+  planPrice: { display: 'flex', alignItems: 'baseline', gap: '6px' },
+  planPerks: { padding: '16px 20px 18px' },
+
+  // All-set
+  successCircle: {
+    width: '84px', height: '84px', borderRadius: '50%', marginBottom: '24px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--accent)', color: 'var(--on-accent)', fontSize: '38px',
+    boxShadow: '0 8px 24px color-mix(in srgb, var(--accent) 34%, transparent)'
+  },
+  summary: {
+    display: 'flex', gap: '10px', marginTop: '26px', width: '100%', maxWidth: '380px'
+  },
+  summaryCell: {
+    flex: 1, padding: '14px 10px', borderRadius: '10px',
+    background: 'var(--surface)', border: '1px solid var(--border)',
+    display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center'
+  },
+  summaryNum: { fontSize: '18px', fontWeight: '700', color: 'var(--text)', letterSpacing: '-0.01em' },
+  summaryLabel: { fontSize: '11px', color: 'var(--text-mute)', fontWeight: '600' },
 
   // Account / login
   form: { display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '340px', marginTop: '24px' },
@@ -264,7 +295,7 @@ const BENEFITS = [
   'Follows the doctor-recommended 20-20-20 rule',
   'Stays quietly in your tray until you need it'
 ]
-const TOTAL = 6 // 0 welcome · 1 how · 2 customize · 3 try · 4 paywall · 5 account
+const TOTAL = 7 // 0 welcome · 1 how · 2 customize · 3 try · 4 account · 5 paywall · 6 all-set
 
 export default function Onboarding() {
   const s = useStyles()
@@ -397,37 +428,9 @@ export default function Onboarding() {
             </>
           )}
 
-          {step === 4 && (
+          {step === 4 && authView === 'signup' && (
             <>
-              <div className={s.proPill} style={rise(0)}>iRetina Pro</div>
-              <div className={s.title} style={rise(1)}>Unlock the full experience</div>
-              <div className={s.lede} style={rise(2)}>Everything iRetina offers, to keep your eyes at their best.</div>
-              <div className={s.billingToggle} style={rise(2)}>
-                <button className={`${s.billBtn} ${billing === 'yearly' ? s.billBtnOn : ''}`} onClick={() => setBilling('yearly')}>
-                  Yearly <span className={s.saveBadge}>7-day free trial</span>
-                </button>
-                <button className={`${s.billBtn} ${billing === 'monthly' ? s.billBtnOn : ''}`} onClick={() => setBilling('monthly')}>
-                  Monthly
-                </button>
-              </div>
-              <div className={s.priceBlock} style={rise(3)}>
-                <span className={s.priceNum}>{price}</span>
-                <span className={s.pricePer}>{per}</span>
-              </div>
-              {billing === 'yearly' && <div className={s.trialNote} style={rise(3)}>Start with a 7-day free trial. Cancel anytime.</div>}
-              <div className={s.perks} style={rise(4)}>
-                {PERKS.map((p) => (
-                  <div key={p} className={s.perk}>
-                    <span className={s.perkCheck}><Checkmark12Filled /></span>{p}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {step === 5 && authView === 'signup' && (
-            <>
-              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={64} /></div>
+              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={62} /></div>
               <div className={s.title} style={rise(1)}>Create your account</div>
               <div className={s.lede} style={rise(2)}>
                 So your plan and settings follow you to any device. You can skip this for now.
@@ -449,9 +452,9 @@ export default function Onboarding() {
             </>
           )}
 
-          {step === 5 && authView === 'login' && (
+          {step === 4 && authView === 'login' && (
             <>
-              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={64} /></div>
+              <div className={s.logoHalo} style={{ ...rise(0), width: 96, height: 96, marginBottom: 18 }}><Logo size={62} /></div>
               <div className={s.title} style={rise(1)}>Welcome back</div>
               <div className={s.lede} style={rise(2)}>Log in to restore your iRetina Pro plan and settings.</div>
               <button className={s.googleBtn} style={rise(3)}>
@@ -470,6 +473,69 @@ export default function Onboarding() {
               </div>
             </>
           )}
+
+          {step === 5 && (
+            <>
+              <div className={s.proPill} style={rise(0)}>iRetina Pro</div>
+              <div className={s.title} style={rise(1)}>Choose your plan</div>
+              <div className={s.lede} style={rise(2)}>Everything iRetina offers, to keep your eyes at their best.</div>
+              <div className={s.billingToggle} style={rise(2)}>
+                <button className={`${s.billBtn} ${billing === 'yearly' ? s.billBtnOn : ''}`} onClick={() => setBilling('yearly')}>
+                  Yearly <span className={s.saveBadge}>7-day free trial</span>
+                </button>
+                <button className={`${s.billBtn} ${billing === 'monthly' ? s.billBtnOn : ''}`} onClick={() => setBilling('monthly')}>
+                  Monthly
+                </button>
+              </div>
+              <div className={s.planCard} style={rise(3)}>
+                <div className={s.planHead}>
+                  <div className={s.planPrice}>
+                    <span className={s.priceNum}>{price}</span>
+                    <span className={s.pricePer}>{per}</span>
+                  </div>
+                  <div className={s.trialNote}>
+                    {billing === 'yearly'
+                      ? '7 days free, then billed yearly. Cancel anytime.'
+                      : 'Billed monthly. Cancel anytime.'}
+                  </div>
+                </div>
+                <div className={s.planPerks}>
+                  <div className={s.perks} style={{ marginTop: 0, maxWidth: 'none' }}>
+                    {PERKS.map((p) => (
+                      <div key={p} className={s.perk}>
+                        <span className={s.perkCheck}><Checkmark12Filled /></span>{p}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {step === 6 && (
+            <>
+              <div className={s.successCircle} style={rise(0)}><Checkmark20Filled /></div>
+              <div className={s.title} style={rise(1)}>You’re all set</div>
+              <div className={s.lede} style={rise(2)}>
+                iRetina is running in your system tray and will gently remind you to
+                rest your eyes. Change anything anytime from Settings.
+              </div>
+              <div className={s.summary} style={rise(3)}>
+                <div className={s.summaryCell}>
+                  <span className={s.summaryNum}>{interval}m</span>
+                  <span className={s.summaryLabel}>Between breaks</span>
+                </div>
+                <div className={s.summaryCell}>
+                  <span className={s.summaryNum}>{duration}s</span>
+                  <span className={s.summaryLabel}>Break length</span>
+                </div>
+                <div className={s.summaryCell}>
+                  <span className={s.summaryNum}>{plan === 'pro' ? 'Pro' : 'Free'}</span>
+                  <span className={s.summaryLabel}>Your plan</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -481,7 +547,7 @@ export default function Onboarding() {
         </div>
 
         <div className={s.footerRight}>
-          {step > 0 && step < 5 && (
+          {step > 0 && step < 6 && (
             <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(step - 1)}>
               <ChevronLeft16Regular /> Back
             </button>
@@ -494,28 +560,33 @@ export default function Onboarding() {
             </button>
           )}
 
-          {/* Step 4: paywall */}
+          {/* Step 4: account (before paywall) */}
           {step === 4 && (
             <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => { setPlan('free'); go(5) }}>
+              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => go(5)}>Skip</button>
+              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => go(5)}>
+                {authView === 'signup' ? 'Create account' : 'Log in'} <ChevronRight16Regular />
+              </button>
+            </>
+          )}
+
+          {/* Step 5: paywall */}
+          {step === 5 && (
+            <>
+              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => { setPlan('free'); go(6) }}>
                 Maybe later
               </button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => { setPlan('pro'); go(5) }}>
+              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => { setPlan('pro'); go(6) }}>
                 {billing === 'yearly' ? 'Start free trial' : 'Subscribe'}
               </button>
             </>
           )}
 
-          {/* Step 5: account / login */}
-          {step === 5 && (
-            <>
-              <button className={`${s.btn} ${s.btnSubtle}`} onClick={() => finish(plan)}>
-                Skip
-              </button>
-              <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => finish(plan)}>
-                {authView === 'signup' ? 'Create account' : 'Log in'}
-              </button>
-            </>
+          {/* Step 6: all set */}
+          {step === 6 && (
+            <button className={`${s.btn} ${s.btnPrimary}`} onClick={() => finish(plan)}>
+              Start using iRetina
+            </button>
           )}
         </div>
       </div>

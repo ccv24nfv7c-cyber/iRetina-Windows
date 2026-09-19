@@ -21,8 +21,8 @@ declare global {
   }
 }
 
-const FADE_IN_MS = 560
-const FADE_OUT_MS = 480
+const FADE_IN_MS = 750
+const FADE_OUT_MS = 650
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
@@ -162,10 +162,10 @@ function OverlayApp(): React.JSX.Element {
       style={{
         width: '100vw',
         height: '100vh',
-        // Semi-transparent dark tint. On Windows the acrylic material blurs the
-        // desktop behind it; a touch of the real screen shows through the tint.
-        background:
-          'linear-gradient(180deg, rgba(10,12,18,0.66) 0%, rgba(8,10,14,0.74) 100%)',
+        // Flat semi-transparent tint (a gradient here caused visible blur banding
+        // over the acrylic material). On Windows the acrylic blurs the desktop
+        // behind it; a touch of the real screen shows through the tint.
+        background: 'rgba(9, 11, 16, 0.72)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
