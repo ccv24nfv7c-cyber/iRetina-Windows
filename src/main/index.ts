@@ -331,6 +331,88 @@ function createCheckoutWindow(url: string) {
   })
 }
 
+// --- Google sign-in (in-app OAuth window) ---
+// Google refuses OAuth inside embedded webviews, so we present a normal-looking
+// window with a plain desktop Chrome user-agent, then capture the session token
+// from the fragment of the Supabase callback URL.
+const GOOGLE_CALLBACK_PREFIX = 'https://iretina.app/auth/callback'
+const CHROME_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
+function runGoogleSignIn(startUrl: string) {
+  return new Promise<{ ok: boolean; message?: string }>((resolve) => {
+    let win: BrowserWindow | null = new BrowserWindow({
+      width: 480,
+      height: 720,
+      title: 'Sign in with Google',
+      parent: onboardingWindow ?? settingsWindow ?? undefined,
+      modal: Boolean(onboardingWindow ?? settingsWindow),
+      icon: getWindowIcon(),
+      show: false,
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+    })
+    let settled = false
+    const finish = (result: { ok: boolean; message?: string }) => {
+      if (settled) return
+      settled = true
+      resolve(result)
+      if (win && !win.isDestroyed()) win.close()
+      win = null
+    }
+
+    const tryCapture = async (targetUrl: string) => {
+      if (!win || !targetUrl.startsWith(GOOGLE_CALLBACK_PREFIX)) return
+      // Tokens live in the URL fragment (#access_token=...); read them from the
+      // page since fragments aren't reliably present on navigation events.
+      let hash = ''
+      let query = ''
+      try {
+        const loc = (await win.webContents.executeJavaScript(
+          'JSON.stringify([location.hash, location.search])'
+        )) as string
+        ;[hash, query] = JSON.parse(loc || '["",""]') as [string, string]
+      } catch {
+        try {
+          const u = new URL(targetUrl)
+          hash = u.hash
+          query = u.search
+        } catch {
+          /* ignore */
+        }
+      }
+      const frag = new URLSearchParams((hash || '').replace(/^#/, ''))
+      const q = new URLSearchParams((query || '').replace(/^\?/, ''))
+      const token = frag.get('access_token')
+      const err =
+        frag.get('error_description') || q.get('error_description') || frag.get('error') || q.get('error')
+      if (token) {
+        store.set('authToken', token)
+        finish({ ok: true })
+      } else if (err) {
+        finish({ ok: false, message: err })
+      }
+    }
+
+    win.webContents.setUserAgent(CHROME_UA)
+    win.webContents.on('will-redirect', (_e, targetUrl) => void tryCapture(targetUrl))
+    win.webContents.on('did-navigate', (_e, targetUrl) => void tryCapture(targetUrl))
+    win.webContents.on('did-navigate-in-page', (_e, targetUrl) => void tryCapture(targetUrl))
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      win?.loadURL(url, { userAgent: CHROME_UA })
+      return { action: 'deny' }
+    })
+    win.once('ready-to-show', () => win?.show())
+    win.on('closed', () => {
+      win = null
+      if (!settled) {
+        settled = true
+        resolve({ ok: false, message: 'Sign-in was canceled.' })
+      }
+    })
+    win.loadURL(startUrl, { userAgent: CHROME_UA })
+  })
+}
+
 // --- Setup tray ---
 function setupTray() {
   tray = new Tray(getTrayIcon())
@@ -428,11 +510,12 @@ function setupIPC() {
   ipcMain.handle('account:google', async () => {
     try {
       const data = await apiPost('/auth/google/start', {})
-      if (typeof data.url === 'string') {
-        await shell.openExternal(data.url)
-        return { ok: true }
+      if (typeof data.url !== 'string') {
+        return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
       }
-      return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
+      // Run the OAuth flow in an in-app window and capture the returned token,
+      // instead of opening the external browser (which never comes back to us).
+      return await runGoogleSignIn(data.url)
     } catch (err) {
       return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
     }
