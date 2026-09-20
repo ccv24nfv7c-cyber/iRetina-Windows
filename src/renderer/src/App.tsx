@@ -59,7 +59,9 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    padding: '4px 12px 16px'
+    padding: '4px 12px 16px',
+    // Drag handle for the frameless window — clicking the brand area drags.
+    WebkitAppRegion: 'drag' as 'drag'
   },
   brandName: { fontSize: '14px', fontWeight: '600', letterSpacing: '-0.005em' },
   navItem: {

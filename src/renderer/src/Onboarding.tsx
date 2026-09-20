@@ -71,9 +71,12 @@ const useStyles = makeStyles({
     color: 'var(--text)',
     overflow: 'hidden',
     fontFamily:
-      "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
+      "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+    // Make the entire window draggable (the body content clears it below).
+    WebkitAppRegion: 'drag' as 'drag'
   },
-  body: { flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' },
+  // Content areas must be non-draggable so clicks/scrolls work.
+  body: { flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', WebkitAppRegion: 'no-drag' as 'no-drag' },
   step: {
     position: 'absolute',
     inset: 0,
@@ -284,7 +287,8 @@ const useStyles = makeStyles({
   // Footer
   footer: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '18px 26px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', gap: '12px'
+    padding: '18px 26px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', gap: '12px',
+    WebkitAppRegion: 'no-drag' as 'no-drag'
   },
   dots: { display: 'flex', gap: '6px' },
   dot: {

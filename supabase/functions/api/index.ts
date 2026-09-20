@@ -130,10 +130,12 @@ async function handleLogin(req: Request) {
 }
 
 async function handleGoogleStart() {
+  // Redirect to the custom protocol so the system browser returns the session
+  // token directly to the Electron app, bypassing the "not safe" webview warning.
   const { data, error } = await supabaseAnon.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${SITE_URL}/auth/callback`,
+      redirectTo: "iretina://auth/callback",
       skipBrowserRedirect: true,
     },
   })

@@ -204,10 +204,12 @@ function showOverlay() {
       width: display.bounds.width,
       height: display.bounds.height,
       frame: false,
-      transparent: true,
-      // Fully transparent background so the window never flashes its default
-      // white before the (opacity-0) content paints and fades in.
-      backgroundColor: '#00000000',
+      // OPAQUE dark window (not transparent). A transparent fullscreen window
+      // flashes white on Windows when it's shown/closed; an opaque window with a
+      // dark background never does. The Win11 acrylic material below still blurs
+      // the desktop through the renderer's semi-transparent tint.
+      transparent: false,
+      backgroundColor: '#0b0d12',
       alwaysOnTop: true,
       skipTaskbar: true,
       // Native fullscreen fights with transparent windows on macOS; cover the
