@@ -205,6 +205,9 @@ function showOverlay() {
       height: display.bounds.height,
       frame: false,
       transparent: true,
+      // Fully transparent background so the window never flashes its default
+      // white before the (opacity-0) content paints and fades in.
+      backgroundColor: '#00000000',
       alwaysOnTop: true,
       skipTaskbar: true,
       // Native fullscreen fights with transparent windows on macOS; cover the

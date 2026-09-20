@@ -21,8 +21,8 @@ declare global {
   }
 }
 
-const FADE_IN_MS = 750
-const FADE_OUT_MS = 650
+const FADE_IN_MS = 950
+const FADE_OUT_MS = 850
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
