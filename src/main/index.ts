@@ -389,6 +389,59 @@ function setupTray() {
 }
 
 // --- IPC handlers ---
+// --- In-app Google OAuth window ---
+// Opens a small focused window with a clean Chrome user agent so Google doesn't
+// block it as an unsafe webview. We intercept the iretina://auth/callback
+// redirect (which the window can't load as a URL) and grab the token.
+const GOOGLE_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+
+function openGoogleSignInWindow(startUrl: string): Promise<{ ok: boolean; message?: string }> {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (result: { ok: boolean; message?: string }) => {
+      if (settled) return
+      settled = true
+      if (!win.isDestroyed()) win.close()
+      resolve(result)
+    }
+
+    const win = new BrowserWindow({
+      width: 480,
+      height: 640,
+      title: 'Sign in with Google',
+      parent: onboardingWindow ?? settingsWindow ?? undefined,
+      modal: Boolean(onboardingWindow ?? settingsWindow),
+      icon: getWindowIcon(),
+      show: false,
+      autoHideMenuBar: true,
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+    })
+
+    const tryCapture = (url: string) => {
+      if (!url.startsWith('iretina://auth/callback')) return false
+      const hash = url.includes('#') ? url.split('#')[1] : ''
+      const query = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : ''
+      const p = new URLSearchParams(hash || query)
+      const token = p.get('access_token')
+      const err = p.get('error_description') || p.get('error')
+      if (token) { store.set('authToken', token); finish({ ok: true }) }
+      else finish({ ok: false, message: err ?? 'Google sign-in failed.' })
+      return true
+    }
+
+    win.webContents.setUserAgent(GOOGLE_UA)
+    win.webContents.on('will-navigate', (e, url) => { if (url.startsWith('iretina://')) { e.preventDefault(); tryCapture(url) } })
+    win.webContents.on('will-redirect', (e, url) => { if (url.startsWith('iretina://')) { e.preventDefault(); tryCapture(url) } })
+    win.webContents.on('did-navigate', (_, url) => { if (url.startsWith('iretina://')) tryCapture(url) })
+    win.webContents.setWindowOpenHandler(({ url }) => { win.loadURL(url, { userAgent: GOOGLE_UA }); return { action: 'deny' } })
+    win.once('ready-to-show', () => win.show())
+    win.on('closed', () => { if (!settled) finish({ ok: false, message: 'Sign-in was canceled.' }) })
+    win.loadURL(startUrl, { userAgent: GOOGLE_UA })
+  })
+}
+
 function setupIPC() {
   ipcMain.handle('prefs:get', (_e, key: string) => store.get(key as keyof typeof store.store))
   ipcMain.handle('prefs:set', (_e, key: string, value: unknown) =>
@@ -454,20 +507,7 @@ function setupIPC() {
       if (typeof data.url !== 'string') {
         return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
       }
-      // Open in the system browser — Google blocks OAuth in embedded webviews.
-      // The browser redirects to iretina://auth/callback which this process
-      // intercepts via handleDeepLink (registered via setAsDefaultProtocolClient).
-      await shell.openExternal(data.url)
-      // Wait for the deep-link callback (60 s timeout).
-      return await new Promise<{ ok: boolean; message?: string }>((resolve) => {
-        pendingGoogleResolve = resolve
-        setTimeout(() => {
-          if (pendingGoogleResolve === resolve) {
-            pendingGoogleResolve = null
-            resolve({ ok: false, message: 'Google sign-in timed out.' })
-          }
-        }, 60_000)
-      })
+      return await openGoogleSignInWindow(data.url)
     } catch (err) {
       return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
     }

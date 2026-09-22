@@ -51,16 +51,18 @@ const useStyles = makeStyles({
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    padding: '16px 8px 12px',
+    // Extra top padding so content clears the hidden title bar caption buttons.
+    padding: '52px 8px 12px',
     boxSizing: 'border-box',
-    gap: '2px'
+    gap: '2px',
+    // Make the whole rail draggable; individual nav items override to no-drag.
+    WebkitAppRegion: 'drag' as 'drag'
   },
   brand: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     padding: '4px 12px 16px',
-    // Drag handle for the frameless window — clicking the brand area drags.
     WebkitAppRegion: 'drag' as 'drag'
   },
   brandName: { fontSize: '14px', fontWeight: '600', letterSpacing: '-0.005em' },
@@ -82,6 +84,7 @@ const useStyles = makeStyles({
     width: '100%',
     position: 'relative',
     transition: 'background 100ms ease',
+    WebkitAppRegion: 'no-drag' as 'no-drag',
     ':hover': { background: 'var(--surface-hover)' },
     ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '-2px' }
   },
@@ -105,7 +108,8 @@ const useStyles = makeStyles({
     flex: 1,
     minWidth: 0,
     overflowY: 'auto',
-    background: 'transparent'
+    background: 'transparent',
+    WebkitAppRegion: 'no-drag' as 'no-drag'
   }
 })
 
