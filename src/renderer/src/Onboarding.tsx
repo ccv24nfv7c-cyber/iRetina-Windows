@@ -402,9 +402,16 @@ export default function Onboarding() {
   async function googleAuth() {
     setBusy(true)
     setError('')
+    // Google blocks OAuth in embedded webviews by policy (same for all desktop
+    // apps — VS Code, Discord, etc. all use the system browser). The browser
+    // opens, you sign in, then focus returns here automatically.
     const result = await window.iretina.account.continueWithGoogle()
     setBusy(false)
-    if (!result.ok) setError(result.message || 'Google sign-in failed.')
+    if (result.ok) {
+      go(6) // signed in — skip straight to the paywall
+    } else {
+      setError(result.message || 'Google sign-in failed.')
+    }
   }
 
   async function startCheckout() {
@@ -541,7 +548,10 @@ export default function Onboarding() {
                   ? 'Your plan and settings will follow you to any device.'
                   : 'Log in to restore your iRetina Pro plan and settings.'}
               </div>
-              <button className={s.googleBtn} style={rise(3)} onClick={googleAuth} disabled={busy}><GoogleG /> Continue with Google</button>
+              <button className={s.googleBtn} style={rise(3)} onClick={googleAuth} disabled={busy}>
+                <GoogleG />
+                {busy ? 'Waiting for Google sign-in...' : 'Continue with Google'}
+              </button>
               <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input
