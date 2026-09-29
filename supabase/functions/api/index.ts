@@ -129,13 +129,15 @@ async function handleLogin(req: Request) {
   })
 }
 
-async function handleGoogleStart() {
-  // Redirect to the custom protocol so the system browser returns the session
-  // token directly to the Electron app, bypassing the "not safe" webview warning.
+async function handleGoogleStart(req: Request) {
+  // The Electron app passes a localhost redirectTo URL pointing to its temporary
+  // callback server. This is the Google-approved desktop OAuth approach used by
+  // VS Code, GitHub CLI etc — no "unsafe app" warning.
+  const { redirectTo } = await readJson(req)
   const { data, error } = await supabaseAnon.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: "iretina://auth/callback",
+      redirectTo: redirectTo || SITE_URL,
       skipBrowserRedirect: true,
     },
   })
@@ -315,7 +317,7 @@ Deno.serve(async (req) => {
 
     if (req.method === "POST" && path === "/auth/signup") return await handleSignup(req)
     if (req.method === "POST" && path === "/auth/login") return await handleLogin(req)
-    if (req.method === "POST" && path === "/auth/google/start") return await handleGoogleStart()
+    if (req.method === "POST" && path === "/auth/google/start") return await handleGoogleStart(req)
     if (req.method === "POST" && path === "/billing/checkout") return await handleCheckout(req)
     if (req.method === "POST" && path === "/stripe/webhook") return await handleWebhook(req)
     if (req.method === "GET" && (path === "/me" || path === "/subscription")) return await handleMe(req)

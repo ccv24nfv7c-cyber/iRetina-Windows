@@ -1,5 +1,7 @@
 import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell } from 'electron'
 import { existsSync } from 'fs'
+import { createServer } from 'http'
+import type { AddressInfo } from 'net'
 import { resolve } from 'path'
 import { store } from './preferences'
 import {
@@ -449,26 +451,38 @@ function setupIPC() {
   })
 
   ipcMain.handle('account:google', async () => {
+    let close: (() => void) | null = null
     try {
-      const data = await apiPost('/auth/google/start', {})
+      const { port, tokenPromise, close: closeServer } = await startCallbackServer()
+      close = closeServer
+      const redirectTo = `http://127.0.0.1:${port}/callback`
+      const data = await apiPost('/auth/google/start', { redirectTo })
       if (typeof data.url !== 'string') {
+        closeServer()
         return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
       }
-      // Google blocks OAuth in embedded webviews (industry-wide policy — VS Code,
-      // Discord, Spotify all use the system browser too). We open the default
-      // browser, catch the iretina:// deep-link callback, then bring the app
-      // back to the front so the user barely notices the browser.
+      // Open the system browser — Google blocks OAuth in embedded webviews.
+      // The browser will show "You can close this tab" after sign-in, and the
+      // app receives the token silently via the local HTTP server.
       await shell.openExternal(data.url)
-      return await new Promise<{ ok: boolean; message?: string }>((resolve) => {
-        pendingGoogleResolve = resolve
-        setTimeout(() => {
-          if (pendingGoogleResolve === resolve) {
-            pendingGoogleResolve = null
-            resolve({ ok: false, message: 'Google sign-in timed out. Please try again.' })
-          }
-        }, 120_000)
-      })
+      const token = await Promise.race([
+        tokenPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Google sign-in timed out. Please try again.')), 120_000)
+        )
+      ])
+      store.set('authToken', token)
+      // Bring app to front
+      const win = onboardingWindow ?? settingsWindow
+      if (win && !win.isDestroyed()) {
+        if (win.isMinimized()) win.restore()
+        win.show()
+        win.focus()
+        if (process.platform === 'darwin') app.focus({ steal: true })
+      }
+      return { ok: true }
     } catch (err) {
+      close?.()
       return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
     }
   })
@@ -536,56 +550,78 @@ function pushStateToRenderer() {
   trayPopupWindow?.webContents.send('engine:stateChanged', state)
 }
 
-// --- App lifecycle ---
-// --- Custom protocol (deep-link) handler ---
-// The system browser redirects to iretina://auth/callback#access_token=...
-// after a successful Google sign-in. We intercept that here.
-if (process.defaultApp) {
-  if (process.argv.length >= 2) app.setAsDefaultProtocolClient('iretina', process.execPath, [resolve(process.argv[1])])
-} else {
-  app.setAsDefaultProtocolClient('iretina')
+// --- Localhost OAuth callback server ---
+// Opens a temporary HTTP server on a random local port. After Google sign-in
+// the browser lands on /callback; a tiny JS snippet reads the access_token from
+// the URL fragment and POSTs it to /token on the same server. This is the
+// standard desktop OAuth approach (used by VS Code, GitHub CLI) — it is
+// explicitly Google-approved and requires no protocol registration.
+const CALLBACK_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>iRetina</title>
+<style>body{font-family:-apple-system,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f9f9f9;}</style>
+</head><body>
+<div style="text-align:center;max-width:360px">
+  <h2 style="color:#0078d4;margin-bottom:8px">You're signed in!</h2>
+  <p style="color:#555">You can close this tab and return to iRetina.</p>
+</div>
+<script>
+var p=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
+fetch('/token',{method:'POST',headers:{'content-type':'application/json'},
+body:JSON.stringify({token:p.get('access_token'),error:p.get('error_description')||p.get('error')})}).catch(function(){});
+</script></body></html>`
+
+function startCallbackServer(): Promise<{
+  port: number
+  tokenPromise: Promise<string>
+  close: () => void
+}> {
+  return new Promise((resolveServer, rejectServer) => {
+    let resolveToken!: (t: string) => void
+    let rejectToken!: (e: Error) => void
+    const tokenPromise = new Promise<string>((res, rej) => { resolveToken = res; rejectToken = rej })
+
+    const server = createServer((req, res) => {
+      const urlPath = req.url?.split('?')[0] ?? ''
+      if (urlPath === '/callback') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+        res.end(CALLBACK_HTML)
+      } else if (urlPath === '/token' && req.method === 'POST') {
+        let body = ''
+        req.on('data', (c: Buffer) => { body += c.toString() })
+        req.on('end', () => {
+          try {
+            const { token, error } = JSON.parse(body) as { token?: string; error?: string }
+            if (token) resolveToken(token)
+            else rejectToken(new Error(error ?? 'Google sign-in failed.'))
+          } catch { rejectToken(new Error('Invalid callback response.')) }
+          res.writeHead(204); res.end()
+          server.close()
+        })
+      } else {
+        res.writeHead(404); res.end()
+      }
+    })
+    server.on('error', (e) => rejectServer(e))
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as AddressInfo
+      resolveServer({ port, tokenPromise, close: () => server.close() })
+    })
+  })
 }
 
-let pendingGoogleResolve: ((result: { ok: boolean; message?: string }) => void) | null = null
+// Required so only one instance runs (second-instance event for checkout deep-links).
+if (!app.requestSingleInstanceLock()) app.quit()
 
-function handleDeepLink(url: string) {
-  if (!url.startsWith('iretina://auth/callback')) return
-  const fragment = url.includes('#') ? url.split('#')[1] : url.split('?')[1] ?? ''
-  const params = new URLSearchParams(fragment)
-  const token = params.get('access_token')
-  const err = params.get('error_description') || params.get('error')
-  if (pendingGoogleResolve) {
-    if (token) {
-      store.set('authToken', token)
-      pendingGoogleResolve({ ok: true })
-    } else {
-      pendingGoogleResolve({ ok: false, message: err ?? 'Google sign-in failed.' })
-    }
-    pendingGoogleResolve = null
+// Keep checkout deep-link working on Windows via second-instance.
+app.on('second-instance', (_e, args) => {
+  const url = args.find((a) => a.startsWith('iretina://checkout/'))
+  if (url) {
+    // Handled in createCheckoutWindow via will-navigate/will-redirect — no-op here.
   }
-  // Bring the app back to the foreground after the browser handled the callback.
   const win = onboardingWindow ?? settingsWindow
   if (win && !win.isDestroyed()) {
     if (win.isMinimized()) win.restore()
-    win.show()
     win.focus()
-    if (process.platform === 'darwin') app.focus({ steal: true })
-  }
-}
-
-// Required for second-instance deep-link handling on Windows.
-if (!app.requestSingleInstanceLock()) app.quit()
-
-// macOS: the URL arrives via the open-url event.
-app.on('open-url', (_e, url) => handleDeepLink(url))
-
-// Windows / Linux: the URL is passed as a command-line argument to a second instance.
-app.on('second-instance', (_e, args) => {
-  const url = args.find((a) => a.startsWith('iretina://'))
-  if (url) handleDeepLink(url)
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    if (settingsWindow.isMinimized()) settingsWindow.restore()
-    settingsWindow.focus()
   }
 })
 
