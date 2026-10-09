@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell } from 'electron'
+import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell, net } from 'electron'
 import { existsSync } from 'fs'
 import { createServer } from 'http'
 import type { AddressInfo } from 'net'
@@ -266,7 +266,10 @@ function requireApiBase() {
 }
 
 async function apiPost(path: string, body: Record<string, unknown>) {
-  const res = await fetch(`${requireApiBase()}${path}`, {
+  // net.fetch uses Chromium's network stack (respects system proxy, Windows CA
+  // store, and works in packaged apps) — unlike Node's built-in fetch (undici)
+  // which can fail with "fetch failed" in installed Electron apps on Windows.
+  const res = await net.fetch(`${requireApiBase()}${path}`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
