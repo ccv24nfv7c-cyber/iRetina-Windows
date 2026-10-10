@@ -148,16 +148,14 @@ const AUTH_CALLBACK_HTML = `<!DOCTYPE html>
 </script>
 </body></html>`
 
-async function handleGoogleStart(_req: Request) { // eslint-disable-line @typescript-eslint/no-unused-vars
-  // Use THIS Edge Function URL as the redirect target. After Google → Supabase
-  // processes the OAuth code, Supabase redirects here with #access_token in the
-  // fragment. The HTML page above reads it and does window.location = iretina://
-  // so the OS routes back to the Electron app without opening localhost.
-  const callbackUrl = "https://ekrknhbtgwkmzwkgzzez.supabase.co/functions/v1/api/auth/callback"
+async function handleGoogleStart() {
+  // Redirect to iretina.app/auth/callback — a tiny HTML page on the user's
+  // own domain that reads the access_token from the URL fragment and redirects
+  // to iretina://auth/callback so the OS routes back to the desktop app.
   const { data, error } = await supabaseAnon.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: callbackUrl,
+      redirectTo: "https://iretina.app/auth/callback",
       skipBrowserRedirect: true,
     },
   })
@@ -337,7 +335,7 @@ Deno.serve(async (req) => {
 
     if (req.method === "POST" && path === "/auth/signup") return await handleSignup(req)
     if (req.method === "POST" && path === "/auth/login") return await handleLogin(req)
-    if (req.method === "POST" && path === "/auth/google/start") return await handleGoogleStart(req)
+    if (req.method === "POST" && path === "/auth/google/start") return await handleGoogleStart()
     if (req.method === "GET"  && path === "/auth/callback") return new Response(AUTH_CALLBACK_HTML, { headers: { "content-type": "text/html; charset=utf-8", ...corsHeaders } })
     if (req.method === "POST" && path === "/billing/checkout") return await handleCheckout(req)
     if (req.method === "POST" && path === "/stripe/webhook") return await handleWebhook(req)

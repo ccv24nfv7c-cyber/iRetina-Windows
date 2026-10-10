@@ -243,21 +243,17 @@ function showOverlay() {
     // Re-send the start payload on every load - covers the initial load AND any
     // reload (HMR / crash recovery), so the overlay never ends up blank.
     win.webContents.on('did-finish-load', () => {
-      // Show the window NOW (before sending start) so it's visible but the
-      // renderer is still at opacity:0. This prevents the white-flash that
-      // occurs when ready-to-show fires before the renderer has painted its
-      // initial opacity:0 frame.
-      if (!win.isDestroyed()) {
-        win.setOpacity(0)
+      // Send the payload immediately so the renderer can start its fade-in
+      // animation while the window is still hidden.
+      win.webContents.send('overlay:start', payload)
+      // Delay showing the window until the Win11 acrylic blur has had time to
+      // settle. If we show immediately, Windows composites a flat grey frame
+      // before the blur kicks in. 250ms is enough for acrylic to be ready.
+      setTimeout(() => {
+        if (win.isDestroyed()) return
         win.show()
         if (isPrimary) win.focus()
-        // Give the renderer one frame to paint opacity:0, then fade in the
-        // window at the OS level simultaneously with the CSS transition.
-        setTimeout(() => {
-          if (!win.isDestroyed()) win.setOpacity(1)
-          win.webContents.send('overlay:start', payload)
-        }, 32)
-      }
+      }, 250)
     })
 
     if (process.env['ELECTRON_RENDERER_URL']) {
