@@ -244,18 +244,18 @@ function showOverlay() {
     // reload (HMR / crash recovery), so the overlay never ends up blank.
     win.webContents.on('did-finish-load', () => {
       if (win.isDestroyed()) return
-      // Show the window at OS opacity 0 immediately so the Win11 acrylic blur
-      // warms up in the background while still invisible. Start the CSS fade at
-      // the same time. After 250ms the acrylic has settled AND the content is
-      // already 25% through its 950ms fade — so when we reveal it there is no
-      // grey frame, just a smooth frosted-glass appearance.
-      win.setOpacity(0)
+      // show() FIRST so the window exists in the compositor — only then does
+      // setOpacity(0) take effect on Windows. If we set opacity before show(),
+      // Windows ignores it and the window appears at full opacity (grey flash).
+      // After 280ms the acrylic material has settled and the CSS fade has already
+      // started, so revealing the window shows frosted glass, not grey.
       win.show()
+      win.setOpacity(0)
       if (isPrimary) win.focus()
       win.webContents.send('overlay:start', payload)
       setTimeout(() => {
         if (!win.isDestroyed()) win.setOpacity(1)
-      }, 250)
+      }, 280)
     })
 
     if (process.env['ELECTRON_RENDERER_URL']) {
@@ -274,8 +274,8 @@ function closeOverlay() {
   wins.forEach((w) => {
     try {
       if (w.isDestroyed()) return
-      // Snap opacity to 0 first, then close after one compositor frame so
-      // Windows never flashes a grey/white frame during window teardown.
+      // Snap opacity to 0 first, then close after 120ms so Windows composites
+      // the opacity change before tearing the window down (50ms was too fast).
       w.setOpacity(0)
       setTimeout(() => {
         try {
@@ -285,7 +285,7 @@ function closeOverlay() {
           }
           w.close()
         } catch { /* already gone */ }
-      }, 50)
+      }, 120)
     } catch { /* already gone */ }
   })
 }

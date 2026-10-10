@@ -1,6 +1,6 @@
 {
   "name": "iretina-windows",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "iRetina - Eye break reminder for Windows",
   "main": "out/main/index.js",
   "scripts": {
