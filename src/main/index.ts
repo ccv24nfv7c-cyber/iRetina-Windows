@@ -653,6 +653,15 @@ app.whenReady().then(() => {
   // Remove the native menu bar (File / Edit / View / Help).
   Menu.setApplicationMenu(null)
 
+  // Fresh-install detection: if installedVersion was never written, the
+  // AppData config is either brand-new or was left over from a stale test run.
+  // Reset onboarding so the user always sees it on a clean install.
+  // Updates (where installedVersion is already set) preserve all settings.
+  if (!store.get('installedVersion')) {
+    store.set('onboardingComplete', false)
+  }
+  store.set('installedVersion', app.getVersion())
+
   setupIPC()
   setupTray()
   setupActivityMonitor()

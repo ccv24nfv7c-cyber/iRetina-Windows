@@ -19,6 +19,7 @@ interface Schema {
   accountEmail: string
   authToken: string
   customerId: string
+  installedVersion: string
 }
 
 const defaults: Schema = {
@@ -39,7 +40,8 @@ const defaults: Schema = {
   referralSource: '',
   accountEmail: '',
   authToken: '',
-  customerId: ''
+  customerId: '',
+  installedVersion: ''
 }
 
 export const store = new Store<Schema>({ defaults })
