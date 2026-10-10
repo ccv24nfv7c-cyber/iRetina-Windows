@@ -418,6 +418,8 @@ function setupIPC() {
     store.set('onboardingComplete', true)
     if (onboardingWindow && !onboardingWindow.isDestroyed()) onboardingWindow.close()
     onboardingWindow = null
+    // Start the break timer now that onboarding is done.
+    scheduleNextBreak()
     // Drop the user straight into the main window so setup feels continuous.
     createSettingsWindow()
   })
@@ -454,38 +456,25 @@ function setupIPC() {
   })
 
   ipcMain.handle('account:google', async () => {
-    let close: (() => void) | null = null
     try {
-      const { port, tokenPromise, close: closeServer } = await startCallbackServer()
-      close = closeServer
-      const redirectTo = `http://127.0.0.1:${port}/callback`
-      const data = await apiPost('/auth/google/start', { redirectTo })
+      const data = await apiPost('/auth/google/start', {})
       if (typeof data.url !== 'string') {
-        closeServer()
         return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
       }
-      // Open the system browser — Google blocks OAuth in embedded webviews.
-      // The browser will show "You can close this tab" after sign-in, and the
-      // app receives the token silently via the local HTTP server.
+      // Opens browser → user signs in → Supabase redirects to our Edge Function
+      // HTML page (/auth/callback) → that page redirects to iretina://auth/callback
+      // → OS routes it back to this app via setAsDefaultProtocolClient.
       await shell.openExternal(data.url)
-      const token = await Promise.race([
-        tokenPromise,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Google sign-in timed out. Please try again.')), 120_000)
-        )
-      ])
-      store.set('authToken', token)
-      // Bring app to front
-      const win = onboardingWindow ?? settingsWindow
-      if (win && !win.isDestroyed()) {
-        if (win.isMinimized()) win.restore()
-        win.show()
-        win.focus()
-        if (process.platform === 'darwin') app.focus({ steal: true })
-      }
-      return { ok: true }
+      return await new Promise<{ ok: boolean; message?: string }>((resolve) => {
+        pendingGoogleResolve = resolve
+        setTimeout(() => {
+          if (pendingGoogleResolve === resolve) {
+            pendingGoogleResolve = null
+            resolve({ ok: false, message: 'Google sign-in timed out. Please try again.' })
+          }
+        }, 120_000)
+      })
     } catch (err) {
-      close?.()
       return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
     }
   })
@@ -612,20 +601,49 @@ function startCallbackServer(): Promise<{
   })
 }
 
-// Required so only one instance runs (second-instance event for checkout deep-links).
+// --- iretina:// deep link handler ---
+// After Google sign-in, the browser lands on our Edge Function /auth/callback
+// HTML page, which does window.location = 'iretina://auth/callback#token…'.
+// The OS routes iretina:// to this app. We catch it here and resolve the
+// pending Google sign-in promise.
+if (process.defaultApp) {
+  if (process.argv.length >= 2) app.setAsDefaultProtocolClient('iretina', process.execPath, [resolve(process.argv[1])])
+} else {
+  app.setAsDefaultProtocolClient('iretina')
+}
+
+let pendingGoogleResolve: ((r: { ok: boolean; message?: string }) => void) | null = null
+
+function handleDeepLink(url: string) {
+  if (url.startsWith('iretina://auth/callback')) {
+    const frag = url.includes('#') ? url.split('#')[1] : url.split('?')[1] ?? ''
+    const p = new URLSearchParams(frag)
+    const token = p.get('access_token')
+    const err = p.get('error_description') || p.get('error')
+    if (pendingGoogleResolve) {
+      if (token) { store.set('authToken', token); pendingGoogleResolve({ ok: true }) }
+      else pendingGoogleResolve({ ok: false, message: err ?? 'Google sign-in failed.' })
+      pendingGoogleResolve = null
+    }
+    // Bring app back to the front
+    const win = onboardingWindow ?? settingsWindow
+    if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus() }
+    if (process.platform === 'darwin') app.focus({ steal: true })
+  }
+}
+
+// macOS
+app.on('open-url', (_e, url) => handleDeepLink(url))
+
+// Required so only one instance runs.
 if (!app.requestSingleInstanceLock()) app.quit()
 
-// Keep checkout deep-link working on Windows via second-instance.
+// Windows / Linux: deep link URL arrives as argv in a second instance.
 app.on('second-instance', (_e, args) => {
-  const url = args.find((a) => a.startsWith('iretina://checkout/'))
-  if (url) {
-    // Handled in createCheckoutWindow via will-navigate/will-redirect — no-op here.
-  }
+  const url = args.find((a) => a.startsWith('iretina://'))
+  if (url) handleDeepLink(url)
   const win = onboardingWindow ?? settingsWindow
-  if (win && !win.isDestroyed()) {
-    if (win.isMinimized()) win.restore()
-    win.focus()
-  }
+  if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.focus() }
 })
 
 app.whenReady().then(() => {
@@ -648,7 +666,11 @@ app.whenReady().then(() => {
     store.set('dndEndTime', null)
   }
 
-  scheduleNextBreak()
+  // Only start the break timer once onboarding is fully complete (plan chosen,
+  // account created). New users go through onboarding first.
+  if (store.get('onboardingComplete')) {
+    scheduleNextBreak()
+  }
 
   setStateChangeCallback(() => pushStateToRenderer())
 

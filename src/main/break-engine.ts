@@ -212,9 +212,10 @@ function showOverlay() {
       backgroundColor: '#00000000',
       alwaysOnTop: true,
       skipTaskbar: true,
-      // Native fullscreen fights with transparent windows on macOS; cover the
-      // display bounds instead and use simple-fullscreen there.
-      fullscreen: process.platform === 'win32',
+      // Don't use fullscreen on Windows — it disables the acrylic blur material.
+      // The window covers the full display bounds via position/size instead, and
+      // setAlwaysOnTop('screen-saver') keeps it above everything.
+      fullscreen: false,
       resizable: false,
       movable: false,
       minimizable: false,

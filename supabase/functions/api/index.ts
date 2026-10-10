@@ -129,15 +129,35 @@ async function handleLogin(req: Request) {
   })
 }
 
-async function handleGoogleStart(req: Request) {
-  // The Electron app passes a localhost redirectTo URL pointing to its temporary
-  // callback server. This is the Google-approved desktop OAuth approach used by
-  // VS Code, GitHub CLI etc — no "unsafe app" warning.
-  const { redirectTo } = await readJson(req)
+// Served after Google sign-in: reads the access_token from the URL fragment
+// (client-side only) and redirects to the iretina:// deep link so the OS
+// routes focus back to the Electron app automatically.
+const AUTH_CALLBACK_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>iRetina — signing you in</title>
+<style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:-apple-system,'Segoe UI',sans-serif;background:#f5f5f5}</style>
+</head><body>
+<div style="text-align:center">
+  <h2 style="color:#0078d4;margin-bottom:8px">Signed in! You can close this tab.</h2>
+  <p style="color:#666">Returning you to iRetina…</p>
+</div>
+<script>
+(function(){
+  var h = window.location.hash || window.location.search;
+  try { window.location.href = 'iretina://auth/callback' + h; } catch(e) {}
+})();
+</script>
+</body></html>`
+
+async function handleGoogleStart(_req: Request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  // Use THIS Edge Function URL as the redirect target. After Google → Supabase
+  // processes the OAuth code, Supabase redirects here with #access_token in the
+  // fragment. The HTML page above reads it and does window.location = iretina://
+  // so the OS routes back to the Electron app without opening localhost.
+  const callbackUrl = "https://ekrknhbtgwkmzwkgzzez.supabase.co/functions/v1/api/auth/callback"
   const { data, error } = await supabaseAnon.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: redirectTo || SITE_URL,
+      redirectTo: callbackUrl,
       skipBrowserRedirect: true,
     },
   })
@@ -318,6 +338,7 @@ Deno.serve(async (req) => {
     if (req.method === "POST" && path === "/auth/signup") return await handleSignup(req)
     if (req.method === "POST" && path === "/auth/login") return await handleLogin(req)
     if (req.method === "POST" && path === "/auth/google/start") return await handleGoogleStart(req)
+    if (req.method === "GET"  && path === "/auth/callback") return new Response(AUTH_CALLBACK_HTML, { headers: { "content-type": "text/html; charset=utf-8", ...corsHeaders } })
     if (req.method === "POST" && path === "/billing/checkout") return await handleCheckout(req)
     if (req.method === "POST" && path === "/stripe/webhook") return await handleWebhook(req)
     if (req.method === "GET" && (path === "/me" || path === "/subscription")) return await handleMe(req)

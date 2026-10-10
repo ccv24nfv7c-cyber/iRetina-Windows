@@ -11,7 +11,7 @@ export default function Logo({ size = 28, style }: { size?: number; style?: Reac
       height={size}
       alt="iRetina"
       draggable={false}
-      style={{ display: 'block', objectFit: 'contain', ...style }}
+      style={{ display: 'block', objectFit: 'contain', borderRadius: '22%', ...style }}
     />
   )
 }

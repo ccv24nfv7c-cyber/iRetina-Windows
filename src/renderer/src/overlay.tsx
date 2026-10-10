@@ -165,7 +165,9 @@ function OverlayApp(): React.JSX.Element {
         // Flat semi-transparent tint (a gradient here caused visible blur banding
         // over the acrylic material). On Windows the acrylic blurs the desktop
         // behind it; a touch of the real screen shows through the tint.
-        background: 'rgba(9, 11, 16, 0.72)',
+        // Lighter tint so the acrylic-blurred desktop shows through more —
+        // gives the frosted glass feel the user asked for.
+        background: 'rgba(9, 11, 16, 0.55)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
