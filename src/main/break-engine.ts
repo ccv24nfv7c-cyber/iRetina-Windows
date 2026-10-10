@@ -243,16 +243,18 @@ function showOverlay() {
     // Re-send the start payload on every load - covers the initial load AND any
     // reload (HMR / crash recovery), so the overlay never ends up blank.
     win.webContents.on('did-finish-load', () => {
-      // Send the payload immediately so the renderer can start its fade-in
-      // animation while the window is still hidden.
+      if (win.isDestroyed()) return
+      // Show the window at OS opacity 0 immediately so the Win11 acrylic blur
+      // warms up in the background while still invisible. Start the CSS fade at
+      // the same time. After 250ms the acrylic has settled AND the content is
+      // already 25% through its 950ms fade — so when we reveal it there is no
+      // grey frame, just a smooth frosted-glass appearance.
+      win.setOpacity(0)
+      win.show()
+      if (isPrimary) win.focus()
       win.webContents.send('overlay:start', payload)
-      // Delay showing the window until the Win11 acrylic blur has had time to
-      // settle. If we show immediately, Windows composites a flat grey frame
-      // before the blur kicks in. 250ms is enough for acrylic to be ready.
       setTimeout(() => {
-        if (win.isDestroyed()) return
-        win.show()
-        if (isPrimary) win.focus()
+        if (!win.isDestroyed()) win.setOpacity(1)
       }, 250)
     })
 
@@ -267,22 +269,25 @@ function showOverlay() {
 }
 
 function closeOverlay() {
-  overlayWindows.forEach((w) => {
-    try {
-      if (!w.isDestroyed()) {
-        // Snap the OS-level opacity to 0 before closing so Windows never
-        // composites a white frame during the window teardown.
-        w.setOpacity(0)
-        if (process.platform === 'darwin' && w.isSimpleFullScreen()) {
-          w.setSimpleFullScreen(false)
-        }
-        w.close()
-      }
-    } catch {
-      /* window already gone */
-    }
-  })
+  const wins = overlayWindows
   overlayWindows = []
+  wins.forEach((w) => {
+    try {
+      if (w.isDestroyed()) return
+      // Snap opacity to 0 first, then close after one compositor frame so
+      // Windows never flashes a grey/white frame during window teardown.
+      w.setOpacity(0)
+      setTimeout(() => {
+        try {
+          if (w.isDestroyed()) return
+          if (process.platform === 'darwin' && w.isSimpleFullScreen()) {
+            w.setSimpleFullScreen(false)
+          }
+          w.close()
+        } catch { /* already gone */ }
+      }, 50)
+    } catch { /* already gone */ }
+  })
 }
 
 export function onOverlayFinished() {
