@@ -7,16 +7,16 @@ export const useUi = makeStyles({
   page: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
-    padding: '32px 36px 48px',
-    maxWidth: '820px',
+    gap: '26px',
+    padding: '38px 40px 54px',
+    maxWidth: '880px',
     width: '100%',
     margin: '0 auto',
     boxSizing: 'border-box'
   },
   head: { display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '2px' },
-  title: { fontSize: '22px', fontWeight: '600', letterSpacing: '-0.01em', color: 'var(--text)' },
-  subtitle: { fontSize: '13px', color: 'var(--text-mute)' },
+  title: { fontSize: '26px', fontWeight: '700', letterSpacing: '-0.025em', color: 'var(--text)' },
+  subtitle: { fontSize: '13.5px', color: 'var(--text-mute)' },
 
   section: { display: 'flex', flexDirection: 'column', gap: '8px' },
   sectionLabel: {
@@ -30,22 +30,24 @@ export const useUi = makeStyles({
   card: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '8px',
-    overflow: 'hidden'
+    borderRadius: '14px',
+    overflow: 'hidden',
+    boxShadow: 'var(--shadow-sm)',
+    backdropFilter: 'blur(18px) saturate(1.1)'
   },
 
   row: {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
-    padding: '14px 16px',
+    padding: '16px 18px',
     minHeight: '32px'
   },
   rowDivider: { borderTop: '1px solid var(--border)' },
   rowIcon: {
     width: '30px',
     height: '30px',
-    borderRadius: '8px',
+    borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -74,9 +76,9 @@ export const useUi = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '7px',
-    height: '32px',
+    height: '36px',
     padding: '0 14px',
-    borderRadius: '8px',
+    borderRadius: '10px',
     border: '1px solid transparent',
     fontFamily: 'inherit',
     fontSize: '13px',
@@ -111,7 +113,7 @@ export const useUi = makeStyles({
     border: '1px solid transparent',
     ':hover': { border: '1px solid var(--danger)' }
   },
-  btnSm: { height: '28px', padding: '0 10px', fontSize: '12px' }
+  btnSm: { height: '30px', padding: '0 11px', fontSize: '12px' }
 })
 
 export function Page({

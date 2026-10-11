@@ -12,6 +12,7 @@ let isPaused = false
 let pauseReason: PauseReason = null
 let isBreakActive = false
 let overlayWindows: BrowserWindow[] = []
+const overlayFadeTimers = new WeakMap<BrowserWindow, ReturnType<typeof setInterval>>()
 
 // The payload the overlay renderer needs. Kept around so we can re-send it if the
 // overlay window reloads (e.g. Vite HMR in dev, or a renderer crash) - otherwise
@@ -35,6 +36,35 @@ function notify() {
 
 function liveOverlayCount() {
   return overlayWindows.filter((w) => !w.isDestroyed()).length
+}
+
+function fadeWindow(win: BrowserWindow, to: number, durationMs: number) {
+  const existing = overlayFadeTimers.get(win)
+  if (existing) clearInterval(existing)
+  if (win.isDestroyed()) return
+
+  const from = win.getOpacity()
+  const startedAt = Date.now()
+  const timer = setInterval(() => {
+    if (win.isDestroyed()) {
+      clearInterval(timer)
+      return
+    }
+    const elapsed = Math.min(1, (Date.now() - startedAt) / durationMs)
+    const eased = 1 - Math.pow(1 - elapsed, 3)
+    win.setOpacity(from + (to - from) * eased)
+    if (elapsed >= 1) {
+      clearInterval(timer)
+      overlayFadeTimers.delete(win)
+    }
+  }, 16)
+  overlayFadeTimers.set(win, timer)
+}
+
+export function beginOverlayFadeOut() {
+  overlayWindows.forEach((win) => {
+    if (!win.isDestroyed()) fadeWindow(win, 0, 760)
+  })
 }
 
 export function getState() {
@@ -210,6 +240,9 @@ function showOverlay() {
       // opacity:0 so nothing is visible until the fade-in begins.
       transparent: true,
       backgroundColor: '#00000000',
+      // Starting at native opacity zero keeps the acrylic material itself from
+      // flashing gray before the renderer has painted the glass scene.
+      opacity: 0,
       alwaysOnTop: true,
       skipTaskbar: true,
       // Don't use fullscreen on Windows — it disables the acrylic blur material.
@@ -244,18 +277,16 @@ function showOverlay() {
     // reload (HMR / crash recovery), so the overlay never ends up blank.
     win.webContents.on('did-finish-load', () => {
       if (win.isDestroyed()) return
-      // show() FIRST so the window exists in the compositor — only then does
-      // setOpacity(0) take effect on Windows. If we set opacity before show(),
-      // Windows ignores it and the window appears at full opacity (grey flash).
-      // After 280ms the acrylic material has settled and the CSS fade has already
-      // started, so revealing the window shows frosted glass, not grey.
-      win.show()
-      win.setOpacity(0)
-      if (isPrimary) win.focus()
+      if (isPrimary) {
+        win.show()
+        win.focus()
+      } else {
+        win.showInactive()
+      }
       win.webContents.send('overlay:start', payload)
       setTimeout(() => {
-        if (!win.isDestroyed()) win.setOpacity(1)
-      }, 280)
+        if (!win.isDestroyed()) fadeWindow(win, 1, 720)
+      }, 32)
     })
 
     if (process.env['ELECTRON_RENDERER_URL']) {
@@ -274,18 +305,13 @@ function closeOverlay() {
   wins.forEach((w) => {
     try {
       if (w.isDestroyed()) return
-      // Snap opacity to 0 first, then close after 120ms so Windows composites
-      // the opacity change before tearing the window down (50ms was too fast).
+      const timer = overlayFadeTimers.get(w)
+      if (timer) clearInterval(timer)
       w.setOpacity(0)
-      setTimeout(() => {
-        try {
-          if (w.isDestroyed()) return
-          if (process.platform === 'darwin' && w.isSimpleFullScreen()) {
-            w.setSimpleFullScreen(false)
-          }
-          w.close()
-        } catch { /* already gone */ }
-      }, 120)
+      if (process.platform === 'darwin' && w.isSimpleFullScreen()) {
+        w.setSimpleFullScreen(false)
+      }
+      w.close()
     } catch { /* already gone */ }
   })
 }

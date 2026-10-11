@@ -205,6 +205,9 @@ const useStyles = makeStyles({
     cursor: 'pointer', transition: `background ${DUR.fast}ms ${EASE.standard}`,
     ':hover': { background: 'var(--surface-hover)' }
   },
+  authHint: {
+    marginTop: '9px', fontSize: '11.5px', color: 'var(--text-mute)', lineHeight: 1.45
+  },
   divider: {
     display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '340px', margin: '14px 0 2px',
     color: 'var(--text-mute)', fontSize: '11px', fontWeight: '600'
@@ -237,43 +240,49 @@ const useStyles = makeStyles({
     background: 'color-mix(in srgb, var(--accent) 16%, transparent)', color: 'var(--accent)',
     fontSize: '11px', fontWeight: '700', letterSpacing: '0.06em', textTransform: 'uppercase'
   },
-  billingToggle: {
-    display: 'flex', gap: '6px', marginTop: '22px', padding: '5px',
-    background: 'var(--surface-2)', borderRadius: '11px', border: '1px solid var(--border)'
+  planGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '22px',
+    width: '100%', maxWidth: '596px', alignItems: 'stretch'
   },
-  billBtn: {
-    display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 20px', borderRadius: '8px',
-    border: '1px solid transparent', background: 'transparent', color: 'var(--text-dim)',
-    fontFamily: 'inherit', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-    transition: `background ${DUR.fast}ms ${EASE.standard}, color ${DUR.fast}ms ${EASE.standard}`
-  },
-  billBtnOn: { background: 'var(--accent)', color: 'var(--on-accent)', boxShadow: 'var(--shadow-sm)' },
-  saveBadge: {
-    padding: '2px 8px', borderRadius: '20px', background: 'var(--accent)', color: 'var(--on-accent)',
-    fontSize: '10px', fontWeight: '700'
-  },
-  // On the selected (accent) button, flip the badge to a white pill so it stays readable.
-  saveBadgeOn: { background: '#ffffff', color: 'var(--accent)' },
   planCard: {
-    marginTop: '20px', width: '100%', maxWidth: '380px',
-    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
-    boxShadow: 'var(--shadow-sm)', overflow: 'hidden', textAlign: 'left'
+    position: 'relative', width: '100%', padding: 0, overflow: 'hidden', textAlign: 'left',
+    fontFamily: 'inherit', color: 'var(--text)', cursor: 'pointer',
+    background: 'color-mix(in srgb, var(--surface) 94%, transparent)',
+    border: '1px solid var(--border-strong)', borderRadius: '16px',
+    boxShadow: '0 8px 28px rgba(0,0,0,0.10)',
+    transition: `transform ${DUR.fast}ms ${EASE.standard}, border-color ${DUR.fast}ms ${EASE.standard}, box-shadow ${DUR.fast}ms ${EASE.standard}`,
+    ':hover': { transform: 'translateY(-2px)', border: '1px solid color-mix(in srgb, var(--accent) 55%, var(--border-strong))' },
+    ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '3px' }
   },
+  planCardOn: {
+    border: '1.5px solid var(--accent)',
+    boxShadow: '0 10px 34px color-mix(in srgb, var(--accent) 18%, transparent)'
+  },
+  planBadge: {
+    position: 'absolute', top: '12px', right: '12px', padding: '4px 8px', borderRadius: '999px',
+    background: 'var(--accent)', color: 'var(--on-accent)', fontSize: '9.5px', fontWeight: '750', letterSpacing: '0.02em'
+  },
+  selectedDot: {
+    width: '17px', height: '17px', borderRadius: '50%', border: '1.5px solid var(--border-strong)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+  },
+  selectedDotOn: { border: '1.5px solid var(--accent)', background: 'var(--accent)', color: 'var(--on-accent)' },
   planHead: {
-    padding: '18px 20px 16px',
+    padding: '18px 18px 15px',
     background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%, var(--surface) 100%)',
     borderBottom: '1px solid var(--border)'
   },
+  planName: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', marginBottom: '15px' },
   planPrice: { display: 'flex', alignItems: 'baseline', gap: '6px' },
-  priceNum: { fontSize: '40px', fontWeight: '700', letterSpacing: '-0.02em', lineHeight: 1 },
-  pricePer: { fontSize: '14px', fontWeight: '400', color: 'var(--text-mute)' },
-  trialNote: { fontSize: '13px', color: 'var(--accent)', fontWeight: '600', marginTop: '10px' },
-  planPerks: { padding: '16px 20px 18px' },
-  perks: { display: 'flex', flexDirection: 'column', gap: '11px' },
-  perk: { display: 'flex', alignItems: 'center', gap: '11px', fontSize: '13.5px' },
+  priceNum: { fontSize: '31px', fontWeight: '750', letterSpacing: '-0.035em', lineHeight: 1 },
+  pricePer: { fontSize: '12px', fontWeight: '500', color: 'var(--text-mute)' },
+  trialNote: { fontSize: '11.5px', color: 'var(--accent)', fontWeight: '650', marginTop: '9px', lineHeight: 1.35 },
+  planPerks: { padding: '14px 18px 17px' },
+  perks: { display: 'flex', flexDirection: 'column', gap: '8px' },
+  perk: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', lineHeight: 1.35 },
   perkCheck: {
-    width: '19px', height: '19px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px'
+    width: '16px', height: '16px', borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '9px'
   },
 
   // All-set
@@ -357,6 +366,7 @@ export default function Onboarding() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
   const [error, setError] = useState('')
   const firstRender = useRef(true)
 
@@ -401,11 +411,13 @@ export default function Onboarding() {
 
   async function googleAuth() {
     setBusy(true)
+    setGoogleBusy(true)
     setError('')
     // Google blocks OAuth in embedded webviews by policy (same for all desktop
     // apps — VS Code, Discord, etc. all use the system browser). The browser
     // opens, you sign in, then focus returns here automatically.
     const result = await window.iretina.account.continueWithGoogle()
+    setGoogleBusy(false)
     setBusy(false)
     if (result.ok) {
       go(6) // signed in — skip straight to the paywall
@@ -433,9 +445,6 @@ export default function Onboarding() {
   const rise = (i: number): React.CSSProperties => ({
     animation: `winFadeUp ${DUR.entrance}ms ${EASE.decel} ${70 + i * 50}ms both`
   })
-
-  const price = billing === 'yearly' ? '$49.99' : '$4.99'
-  const per = billing === 'yearly' ? '/ year' : '/ month'
 
   return (
     <div className={s.root}>
@@ -552,6 +561,7 @@ export default function Onboarding() {
                 <GoogleG />
                 {busy ? 'Waiting for Google sign-in...' : 'Continue with Google'}
               </button>
+              <div className={s.authHint} style={rise(3)}>Your browser will open so you can choose the Google account to use.</div>
               <div className={s.divider} style={rise(3)}><span className={s.dividerLine} /> OR <span className={s.dividerLine} /></div>
               <div className={s.form} style={rise(4)}>
                 <input
@@ -600,34 +610,47 @@ export default function Onboarding() {
             <>
               <div className={s.proPill} style={rise(0)}>iRetina Pro</div>
               <div className={s.title} style={rise(1)}>Choose your plan</div>
-              <div className={s.lede} style={rise(2)}>Everything iRetina offers, to keep your eyes at their best.</div>
-              <div className={s.billingToggle} style={rise(2)}>
-                <button className={mergeClasses(s.billBtn, billing === 'yearly' && s.billBtnOn)} onClick={() => setBilling('yearly')}>
-                  Yearly <span className={mergeClasses(s.saveBadge, billing === 'yearly' && s.saveBadgeOn)}>7-day free trial</span>
-                </button>
-                <button className={mergeClasses(s.billBtn, billing === 'monthly' && s.billBtnOn)} onClick={() => setBilling('monthly')}>
-                  Monthly
-                </button>
-              </div>
-              <div className={s.planCard} style={rise(3)}>
-                <div className={s.planHead}>
-                  <div className={s.planPrice}>
-                    <span className={s.priceNum}>{price}</span>
-                    <span className={s.pricePer}>{per}</span>
-                  </div>
-                  <div className={s.trialNote}>
-                    {billing === 'yearly' ? '7 days free, then billed yearly. Cancel anytime.' : 'Billed monthly. Cancel anytime.'}
-                  </div>
-                </div>
-                <div className={s.planPerks}>
-                  <div className={s.perks}>
-                    {PERKS.map((p) => (
-                      <div key={p} className={s.perk}>
-                        <span className={s.perkCheck}><Checkmark12Filled /></span>{p}
+              <div className={s.lede} style={rise(2)}>One simple Pro plan. Pick the billing that works for you.</div>
+              <div className={s.planGrid} style={rise(3)}>
+                {([
+                  { id: 'yearly' as const, name: 'Yearly', price: '$49.99', per: 'per year', note: '7 days free · about $4.17/month', badge: 'SAVE 17%' },
+                  { id: 'monthly' as const, name: 'Monthly', price: '$4.99', per: 'per month', note: 'Billed monthly · cancel anytime', badge: '' }
+                ]).map((option) => {
+                  const selected = billing === option.id
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={mergeClasses(s.planCard, selected && s.planCardOn)}
+                      onClick={() => setBilling(option.id)}
+                      aria-pressed={selected}
+                    >
+                      {option.badge && <span className={s.planBadge}>{option.badge}</span>}
+                      <div className={s.planHead}>
+                        <div className={s.planName}>
+                          <span className={mergeClasses(s.selectedDot, selected && s.selectedDotOn)}>
+                            {selected && <Checkmark12Filled />}
+                          </span>
+                          {option.name}
+                        </div>
+                        <div className={s.planPrice}>
+                          <span className={s.priceNum}>{option.price}</span>
+                          <span className={s.pricePer}>{option.per}</span>
+                        </div>
+                        <div className={s.trialNote}>{option.note}</div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <div className={s.planPerks}>
+                        <div className={s.perks}>
+                          {PERKS.map((p) => (
+                            <div key={p} className={s.perk}>
+                              <span className={s.perkCheck}><Checkmark12Filled /></span>{p}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
               {error && <div className={s.error} role="alert">{error}</div>}
             </>
@@ -675,7 +698,7 @@ export default function Onboarding() {
           {step === 5 && (
             <button className={mergeClasses(s.btn, s.btnPrimary)} onClick={submitAccount} disabled={busy}>
               {busy
-                ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid var(--on-accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />{authView === 'signup' ? 'Creating...' : 'Logging in...'}</>
+                ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid var(--on-accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />{googleBusy ? 'Finish in your browser' : authView === 'signup' ? 'Creating...' : 'Logging in...'}</>
                 : <>{authView === 'signup' ? 'Create account' : 'Log in'} <ChevronRight16Regular /></>
               }
             </button>
@@ -686,7 +709,7 @@ export default function Onboarding() {
             <>
               <button className={mergeClasses(s.btn, s.btnSubtle)} onClick={() => { setPlan('free'); go(7) }} disabled={busy}>Maybe later</button>
               <button className={mergeClasses(s.btn, s.btnPrimary)} onClick={startCheckout} disabled={busy}>
-                {busy ? 'Opening checkout...' : billing === 'yearly' ? 'Start free trial' : 'Subscribe'}
+                {busy ? 'Opening checkout...' : billing === 'yearly' ? 'Start 7-day free trial' : 'Choose monthly'}
               </button>
             </>
           )}

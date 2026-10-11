@@ -1,7 +1,5 @@
 import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell, net } from 'electron'
 import { existsSync } from 'fs'
-import { createServer } from 'http'
-import type { AddressInfo } from 'net'
 import { resolve } from 'path'
 import { store } from './preferences'
 import {
@@ -15,6 +13,7 @@ import {
   deactivateDND,
   getState,
   setStateChangeCallback,
+  beginOverlayFadeOut,
   onOverlayFinished
 } from './break-engine'
 
@@ -49,7 +48,9 @@ function getTrayIcon() {
     t.setTemplateImage(true)
     return t
   }
-  return loadIcon('tray-icon.png', 'icon.png').resize({ width: 16, height: 16 })
+  // tray-icon.png has a matching @2x representation so Windows can choose a
+  // crisp asset at every taskbar scale instead of upscaling a forced 16 px copy.
+  return loadIcon('tray-icon.png', 'icon.png')
 }
 
 function getWindowIcon() {
@@ -66,10 +67,10 @@ function createSettingsWindow() {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 820,
-    height: 620,
-    minWidth: 700,
-    minHeight: 500,
+    width: 900,
+    height: 680,
+    minWidth: 760,
+    minHeight: 560,
     title: 'iRetina',
     icon: getWindowIcon(),
     show: false,
@@ -127,8 +128,8 @@ function createOnboardingWindow() {
   }
 
   onboardingWindow = new BrowserWindow({
-    width: 720,
-    height: 680,
+    width: 760,
+    height: 720,
     resizable: false,
     maximizable: false,
     title: 'iRetina',
@@ -182,8 +183,8 @@ function createTrayPopup() {
   }
 
   const trayBounds = tray!.getBounds()
-  const winWidth = 322
-  const winHeight = 384
+  const winWidth = 336
+  const winHeight = 408
 
   // Anchor the popup to the tray icon, then clamp it fully on-screen.
   // macOS puts the menu bar at the top, so the popup drops *below* the icon;
@@ -461,11 +462,10 @@ function setupIPC() {
       if (typeof data.url !== 'string') {
         return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
       }
-      // Opens browser → user signs in → Supabase redirects to our Edge Function
-      // HTML page (/auth/callback) → that page redirects to iretina://auth/callback
-      // → OS routes it back to this app via setAsDefaultProtocolClient.
-      await shell.openExternal(data.url)
-      return await new Promise<{ ok: boolean; message?: string }>((resolve) => {
+      // Install the resolver BEFORE opening the browser. A user who is already
+      // signed into Google can complete the redirect almost instantly; the old
+      // ordering could lose that deep link and leave onboarding waiting forever.
+      const authResult = new Promise<{ ok: boolean; message?: string }>((resolve) => {
         pendingGoogleResolve = resolve
         setTimeout(() => {
           if (pendingGoogleResolve === resolve) {
@@ -474,7 +474,17 @@ function setupIPC() {
           }
         }, 120_000)
       })
+      // Google OAuth belongs in the system browser. The backend forces an
+      // account picker and redirects directly back to iretina://auth/callback.
+      // Override these two parameters locally as well so installed clients get
+      // the fixed flow even before the matching Edge Function is redeployed.
+      const oauthUrl = new URL(data.url)
+      oauthUrl.searchParams.set('redirect_to', 'iretina://auth/callback')
+      oauthUrl.searchParams.set('prompt', 'select_account')
+      await shell.openExternal(oauthUrl.toString())
+      return await authResult
     } catch (err) {
+      pendingGoogleResolve = null
       return { ok: false, message: err instanceof Error ? err.message : 'Google sign-in failed.' }
     }
   })
@@ -498,6 +508,7 @@ function setupIPC() {
   })
 
   ipcMain.on('overlay:finished', () => onOverlayFinished())
+  ipcMain.on('overlay:closing', () => beginOverlayFadeOut())
   ipcMain.on('overlay:skip', () => {
     skipBreak()
   })
@@ -542,70 +553,10 @@ function pushStateToRenderer() {
   trayPopupWindow?.webContents.send('engine:stateChanged', state)
 }
 
-// --- Localhost OAuth callback server ---
-// Opens a temporary HTTP server on a random local port. After Google sign-in
-// the browser lands on /callback; a tiny JS snippet reads the access_token from
-// the URL fragment and POSTs it to /token on the same server. This is the
-// standard desktop OAuth approach (used by VS Code, GitHub CLI) — it is
-// explicitly Google-approved and requires no protocol registration.
-const CALLBACK_HTML = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>iRetina</title>
-<style>body{font-family:-apple-system,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f9f9f9;}</style>
-</head><body>
-<div style="text-align:center;max-width:360px">
-  <h2 style="color:#0078d4;margin-bottom:8px">You're signed in!</h2>
-  <p style="color:#555">You can close this tab and return to iRetina.</p>
-</div>
-<script>
-var p=new URLSearchParams(location.hash.slice(1)||location.search.slice(1));
-fetch('/token',{method:'POST',headers:{'content-type':'application/json'},
-body:JSON.stringify({token:p.get('access_token'),error:p.get('error_description')||p.get('error')})}).catch(function(){});
-</script></body></html>`
-
-function startCallbackServer(): Promise<{
-  port: number
-  tokenPromise: Promise<string>
-  close: () => void
-}> {
-  return new Promise((resolveServer, rejectServer) => {
-    let resolveToken!: (t: string) => void
-    let rejectToken!: (e: Error) => void
-    const tokenPromise = new Promise<string>((res, rej) => { resolveToken = res; rejectToken = rej })
-
-    const server = createServer((req, res) => {
-      const urlPath = req.url?.split('?')[0] ?? ''
-      if (urlPath === '/callback') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-        res.end(CALLBACK_HTML)
-      } else if (urlPath === '/token' && req.method === 'POST') {
-        let body = ''
-        req.on('data', (c: Buffer) => { body += c.toString() })
-        req.on('end', () => {
-          try {
-            const { token, error } = JSON.parse(body) as { token?: string; error?: string }
-            if (token) resolveToken(token)
-            else rejectToken(new Error(error ?? 'Google sign-in failed.'))
-          } catch { rejectToken(new Error('Invalid callback response.')) }
-          res.writeHead(204); res.end()
-          server.close()
-        })
-      } else {
-        res.writeHead(404); res.end()
-      }
-    })
-    server.on('error', (e) => rejectServer(e))
-    server.listen(0, '127.0.0.1', () => {
-      const { port } = server.address() as AddressInfo
-      resolveServer({ port, tokenPromise, close: () => server.close() })
-    })
-  })
-}
-
 // --- iretina:// deep link handler ---
-// After Google sign-in, the browser lands on our Edge Function /auth/callback
-// HTML page, which does window.location = 'iretina://auth/callback#token…'.
-// The OS routes iretina:// to this app. We catch it here and resolve the
-// pending Google sign-in promise.
+// Supabase returns the completed Google session to our registered desktop
+// protocol. The OS routes iretina:// to this app, where we persist the token,
+// resolve the pending sign-in, and bring onboarding back to the foreground.
 if (process.defaultApp) {
   if (process.argv.length >= 2) app.setAsDefaultProtocolClient('iretina', process.execPath, [resolve(process.argv[1])])
 } else {
@@ -620,8 +571,11 @@ function handleDeepLink(url: string) {
     const p = new URLSearchParams(frag)
     const token = p.get('access_token')
     const err = p.get('error_description') || p.get('error')
+    // Persist a valid callback even if it arrives while Windows is still
+    // bringing the existing app instance forward.
+    if (token) store.set('authToken', token)
     if (pendingGoogleResolve) {
-      if (token) { store.set('authToken', token); pendingGoogleResolve({ ok: true }) }
+      if (token) pendingGoogleResolve({ ok: true })
       else pendingGoogleResolve({ ok: false, message: err ?? 'Google sign-in failed.' })
       pendingGoogleResolve = null
     }

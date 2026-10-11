@@ -14,6 +14,7 @@ declare global {
           isPrimary: boolean
         }) => void
       ) => void
+      closing: () => void
       finished: () => void
       skip: () => void
       activateDND: (hours: number) => void
@@ -60,6 +61,7 @@ function OverlayApp(): React.JSX.Element {
     if (closingRef.current) return
     closingRef.current = true
     if (soundRef.current && primaryRef.current) playBreakEnd()
+    window.overlayBridge.closing()
     setPhase('leaving')
     window.setTimeout(
       () => window.overlayBridge[action](),
@@ -114,6 +116,7 @@ function OverlayApp(): React.JSX.Element {
     if (closingRef.current) return
     closingRef.current = true
     if (soundRef.current && primaryRef.current) playBreakEnd()
+    window.overlayBridge.closing()
     setPhase('leaving')
     window.setTimeout(
       () => window.overlayBridge.activateDND(2.5),
@@ -162,12 +165,17 @@ function OverlayApp(): React.JSX.Element {
       style={{
         width: '100vw',
         height: '100vh',
-        // Flat semi-transparent tint (a gradient here caused visible blur banding
-        // over the acrylic material). On Windows the acrylic blurs the desktop
-        // behind it; a touch of the real screen shows through the tint.
-        // Lighter tint so the acrylic-blurred desktop shows through more —
-        // gives the frosted glass feel the user asked for.
-        background: 'rgba(9, 11, 16, 0.55)',
+        // The native window supplies the blur; these low-alpha layers add the
+        // depth and edge light of liquid glass without turning it into a gray
+        // sheet over the desktop.
+        background: [
+          'radial-gradient(circle at 18% 12%, rgba(96,205,255,0.16), transparent 34%)',
+          'radial-gradient(circle at 82% 88%, rgba(73,116,255,0.12), transparent 38%)',
+          'linear-gradient(145deg, rgba(8,15,28,0.22), rgba(5,9,18,0.38))'
+        ].join(', '),
+        backdropFilter: 'blur(30px) saturate(1.22)',
+        WebkitBackdropFilter: 'blur(30px) saturate(1.22)',
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

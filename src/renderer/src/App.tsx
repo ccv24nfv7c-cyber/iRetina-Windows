@@ -47,32 +47,35 @@ const useStyles = makeStyles({
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
   },
   rail: {
-    width: '256px',
+    width: '238px',
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
     // Extra top padding so content clears the hidden title bar caption buttons.
-    padding: '52px 8px 12px',
+    padding: '54px 12px 16px',
     boxSizing: 'border-box',
-    gap: '2px',
+    gap: '5px',
+    background: 'color-mix(in srgb, var(--layer) 82%, transparent)',
+    borderRight: '1px solid var(--border)',
+    backdropFilter: 'blur(24px) saturate(1.15)',
     // Make the whole rail draggable; individual nav items override to no-drag.
     WebkitAppRegion: 'drag' as 'drag'
   },
   brand: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '4px 12px 16px',
+    gap: '11px',
+    padding: '4px 11px 22px',
     WebkitAppRegion: 'drag' as 'drag'
   },
-  brandName: { fontSize: '14px', fontWeight: '600', letterSpacing: '-0.005em' },
+  brandName: { fontSize: '16px', fontWeight: '700', letterSpacing: '-0.02em' },
   navItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
-    padding: '0 12px',
-    height: '38px',
-    borderRadius: '5px',
+    padding: '0 13px',
+    height: '42px',
+    borderRadius: '11px',
     border: '1px solid transparent',
     background: 'transparent',
     color: 'var(--text)',
@@ -83,22 +86,22 @@ const useStyles = makeStyles({
     textAlign: 'left',
     width: '100%',
     position: 'relative',
-    transition: 'background 100ms ease',
+    transition: 'background 150ms ease, transform 150ms ease',
     WebkitAppRegion: 'no-drag' as 'no-drag',
-    ':hover': { background: 'var(--surface-hover)' },
+    ':hover': { background: 'var(--surface-hover)', transform: 'translateX(2px)' },
     ':focus-visible': { outline: '2px solid var(--focus)', outlineOffset: '-2px' }
   },
   navItemOn: {
-    background: 'var(--surface-2)',
+    background: 'linear-gradient(90deg, var(--accent-soft), var(--surface-2))',
     fontWeight: '600',
     ':hover': { background: 'var(--surface-hover)' }
   },
   // Win11 NavigationView selection pill - a short rounded bar on the left edge.
   navBar: {
     position: 'absolute',
-    left: '0',
-    top: '9px',
-    bottom: '9px',
+    left: '1px',
+    top: '10px',
+    bottom: '10px',
     width: '3px',
     borderRadius: '3px',
     background: 'var(--accent)'
@@ -108,7 +111,7 @@ const useStyles = makeStyles({
     flex: 1,
     minWidth: 0,
     overflowY: 'auto',
-    background: 'transparent',
+    background: 'linear-gradient(145deg, transparent, color-mix(in srgb, var(--accent) 3%, transparent))',
     WebkitAppRegion: 'no-drag' as 'no-drag'
   }
 })

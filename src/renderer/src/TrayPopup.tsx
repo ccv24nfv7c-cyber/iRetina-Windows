@@ -13,10 +13,15 @@ const useStyles = makeStyles({
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
-    background: 'var(--surface)',
+    background: [
+      'radial-gradient(circle at 78% 5%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%)',
+      'color-mix(in srgb, var(--surface) 94%, transparent)'
+    ].join(', '),
     border: '1px solid var(--border)',
-    borderRadius: '12px',
+    borderRadius: '18px',
     overflow: 'hidden',
+    boxShadow: '0 18px 48px rgba(0,0,0,0.28)',
+    backdropFilter: 'blur(26px) saturate(1.18)',
     color: 'var(--text)',
     fontFamily:
       "'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
@@ -25,17 +30,17 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '9px',
-    padding: '13px 14px',
+    padding: '15px 16px',
     borderBottom: '1px solid var(--border)'
   },
-  brand: { fontSize: '13px', fontWeight: '700', letterSpacing: '-0.01em', flex: 1 },
+  brand: { fontSize: '14px', fontWeight: '700', letterSpacing: '-0.02em', flex: 1 },
   iconBtn: {
     width: '28px',
     height: '28px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: '8px',
+    borderRadius: '9px',
     border: 'none',
     background: 'transparent',
     color: 'var(--text-dim)',
@@ -48,28 +53,27 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
-    padding: '20px 16px 16px'
+    gap: '12px',
+    padding: '22px 16px 18px'
   },
   big: {
     fontSize: '32px',
-    fontWeight: '400',
+    fontWeight: '650',
     lineHeight: 1,
     letterSpacing: '-0.02em',
     color: 'var(--text)',
     fontVariantNumeric: 'tabular-nums'
   },
-  word: { fontSize: '20px', fontWeight: '600', color: 'var(--text)' },
+  word: { fontSize: '20px', fontWeight: '650', color: 'var(--text)' },
   sub: {
-    fontSize: '10.5px',
-    fontWeight: '700',
-    letterSpacing: '0.07em',
-    textTransform: 'uppercase',
+    fontSize: '12px',
+    fontWeight: '600',
+    letterSpacing: '0.01em',
     color: 'var(--text-mute)',
     whiteSpace: 'nowrap'
   },
   footer: {
-    padding: '12px 14px 14px',
+    padding: '14px 16px 16px',
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
@@ -136,7 +140,7 @@ export default function TrayPopup({
   return (
     <div className={s.root}>
       <div className={s.header}>
-        <Logo size={20} />
+        <Logo size={22} />
         <span className={s.brand}>iRetina</span>
         <button className={s.iconBtn} aria-label="Settings" onClick={openSettings}>
           <Settings16Regular />
@@ -144,7 +148,7 @@ export default function TrayPopup({
       </div>
 
       <div className={s.body}>
-        <Ring size={152} stroke={10} progress={progress} dim={engineState.isPaused}>
+        <Ring size={158} stroke={10} progress={progress} dim={engineState.isPaused}>
           {center}
         </Ring>
         <div className={s.sub}>{sub}</div>

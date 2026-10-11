@@ -17,12 +17,13 @@ const useLocal = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '28px',
-    padding: '24px 28px',
+    padding: '28px 30px',
     background:
       'linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%, var(--surface) 58%)',
     border: '1px solid var(--border)',
-    borderRadius: '10px',
-    boxShadow: 'var(--shadow-sm)'
+    borderRadius: '18px',
+    boxShadow: 'var(--shadow)',
+    backdropFilter: 'blur(20px) saturate(1.12)'
   },
   ringWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 },
   heroBody: { display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minWidth: 0 },
@@ -50,8 +51,8 @@ const useLocal = makeStyles({
   stat: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: '8px',
-    padding: '16px',
+    borderRadius: '13px',
+    padding: '18px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',

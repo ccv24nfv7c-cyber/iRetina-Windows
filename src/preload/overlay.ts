@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('overlayBridge', {
       isPrimary: boolean
     }) => void
   ) => ipcRenderer.on('overlay:start', (_e, data) => cb(data)),
+  closing: () => ipcRenderer.send('overlay:closing'),
   finished: () => ipcRenderer.send('overlay:finished'),
   skip: () => ipcRenderer.send('overlay:skip'),
   activateDND: (hours: number) => ipcRenderer.send('overlay:dnd', hours)

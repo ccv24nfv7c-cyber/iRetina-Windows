@@ -1,6 +1,6 @@
 {
   "name": "iretina-windows",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "description": "iRetina - Eye break reminder for Windows",
   "main": "out/main/index.js",
   "scripts": {
@@ -34,7 +34,9 @@
     "protocols": [
       {
         "name": "iRetina",
-        "schemes": ["iretina"],
+        "schemes": [
+          "iretina"
+        ],
         "role": "Editor"
       }
     ],
