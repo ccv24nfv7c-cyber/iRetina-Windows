@@ -165,17 +165,21 @@ function OverlayApp(): React.JSX.Element {
       style={{
         width: '100vw',
         height: '100vh',
-        // The native window supplies the blur; these low-alpha layers add the
-        // depth and edge light of liquid glass without turning it into a gray
-        // sheet over the desktop.
+        // Native acrylic/vibrancy supplies the first blur pass. The stronger
+        // tint and second CSS pass keep windows recognizable only as soft
+        // shapes, while the cool highlights retain a liquid-glass character.
         background: [
-          'radial-gradient(circle at 18% 12%, rgba(96,205,255,0.16), transparent 34%)',
-          'radial-gradient(circle at 82% 88%, rgba(73,116,255,0.12), transparent 38%)',
-          'linear-gradient(145deg, rgba(8,15,28,0.22), rgba(5,9,18,0.38))'
+          'radial-gradient(ellipse 76% 62% at 12% 5%, rgba(91,197,255,0.24) 0%, rgba(46,124,194,0.08) 46%, transparent 72%)',
+          'radial-gradient(ellipse 68% 58% at 92% 96%, rgba(82,102,255,0.18) 0%, rgba(44,57,133,0.06) 48%, transparent 76%)',
+          'linear-gradient(145deg, rgba(7,14,27,0.62), rgba(4,8,18,0.76))'
         ].join(', '),
-        backdropFilter: 'blur(30px) saturate(1.22)',
-        WebkitBackdropFilter: 'blur(30px) saturate(1.22)',
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(88px) saturate(1.48) brightness(0.68)',
+        WebkitBackdropFilter: 'blur(88px) saturate(1.48) brightness(0.68)',
+        boxShadow: [
+          'inset 0 1px 0 rgba(255,255,255,0.16)',
+          'inset 0 -1px 0 rgba(255,255,255,0.05)',
+          'inset 0 0 120px rgba(42,119,191,0.08)'
+        ].join(', '),
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -192,6 +196,22 @@ function OverlayApp(): React.JSX.Element {
         userSelect: 'none'
       }}
     >
+      {/* Subtle refracted highlights keep the heavy blur feeling like glass,
+          rather than a flat dark scrim. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          background: [
+            'linear-gradient(112deg, transparent 7%, rgba(255,255,255,0.035) 28%, transparent 49%)',
+            'radial-gradient(ellipse 42% 24% at 50% -6%, rgba(255,255,255,0.12), transparent 72%)'
+          ].join(', '),
+          opacity: 0.9
+        }}
+      />
+
       {/* Wall clock */}
       <div
         style={{
@@ -202,7 +222,8 @@ function OverlayApp(): React.JSX.Element {
           fontSize: '15px',
           color: 'rgba(255,255,255,0.42)',
           fontWeight: 500,
-          letterSpacing: '0.6px'
+          letterSpacing: '0.6px',
+          zIndex: 1
         }}
       >
         {timeDisplay}
@@ -217,7 +238,8 @@ function OverlayApp(): React.JSX.Element {
           gap: '30px',
           textAlign: 'center',
           maxWidth: '700px',
-          padding: '0 40px'
+          padding: '0 40px',
+          zIndex: 1
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -321,7 +343,8 @@ function OverlayApp(): React.JSX.Element {
           gap: '12px',
           opacity: phase === 'leaving' ? 0 : 1,
           transition: 'opacity 0.35s ease',
-          pointerEvents: phase === 'leaving' ? 'none' : 'auto'
+          pointerEvents: phase === 'leaving' ? 'none' : 'auto',
+          zIndex: 1
         }}
       >
         {strict ? (
@@ -372,7 +395,8 @@ function OverlayApp(): React.JSX.Element {
             fontWeight: 500,
             letterSpacing: '0.4px',
             opacity: phase === 'leaving' ? 0 : 1,
-            transition: 'opacity 0.35s ease'
+            transition: 'opacity 0.35s ease',
+            zIndex: 1
           }}
         >
           Press Enter twice, or Esc, to dismiss

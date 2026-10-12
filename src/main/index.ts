@@ -474,12 +474,13 @@ function setupIPC() {
           }
         }, 120_000)
       })
-      // Google OAuth belongs in the system browser. The backend forces an
-      // account picker and redirects directly back to iretina://auth/callback.
-      // Override these two parameters locally as well so installed clients get
-      // the fixed flow even before the matching Edge Function is redeployed.
+      // Google OAuth belongs in the system browser. Supabase only honors URLs
+      // on its redirect allow-list; an unlisted custom protocol silently falls
+      // back to the public site URL (the exact failure mode that left setup
+      // spinning). Always return through our HTTPS bridge, which immediately
+      // hands the result to the registered iretina:// desktop protocol.
       const oauthUrl = new URL(data.url)
-      oauthUrl.searchParams.set('redirect_to', 'iretina://auth/callback')
+      oauthUrl.searchParams.set('redirect_to', 'https://iretina.app/auth/callback.html')
       oauthUrl.searchParams.set('prompt', 'select_account')
       await shell.openExternal(oauthUrl.toString())
       return await authResult
@@ -640,6 +641,12 @@ app.whenReady().then(() => {
   // First run → guided onboarding; afterwards the app lives quietly in the tray.
   if (!store.get('onboardingComplete')) {
     createOnboardingWindow()
+  }
+
+  // Local visual QA: opt into an immediate break without adding a production
+  // menu item or changing a user's saved timer.
+  if (!app.isPackaged && process.env['IRETINA_PREVIEW_BREAK'] === '1') {
+    setTimeout(() => triggerNow(), 700)
   }
 })
 

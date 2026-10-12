@@ -240,6 +240,11 @@ function showOverlay() {
       // opacity:0 so nothing is visible until the fade-in begins.
       transparent: true,
       backgroundColor: '#00000000',
+      // macOS needs a native visual-effect view to blur content outside the
+      // Electron renderer. This keeps local previews faithful to the Windows
+      // acrylic treatment instead of showing a nearly-clear desktop.
+      vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
+      visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
       // Starting at native opacity zero keeps the acrylic material itself from
       // flashing gray before the renderer has painted the glass scene.
       opacity: 0,
@@ -268,6 +273,7 @@ function showOverlay() {
     }
 
     if (process.platform === 'darwin') {
+      win.setVibrancy('under-window')
       win.setSimpleFullScreen(true)
     }
     win.setAlwaysOnTop(true, 'screen-saver')

@@ -130,13 +130,14 @@ async function handleLogin(req: Request) {
 }
 
 async function handleGoogleStart() {
-  // Return directly to the registered desktop protocol. Forcing Google's
-  // account picker prevents an existing browser session from looking like a
-  // no-op sign-in and makes the chosen identity explicit.
+  // Return through the public HTTPS bridge. Supabase Auth rejects redirect
+  // targets that are not on the project's allow-list and silently falls back
+  // to SITE_URL; the bridge then forwards the fragment to the desktop protocol.
+  // Forcing Google's account picker keeps the chosen identity explicit.
   const { data, error } = await supabaseAnon.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: "iretina://auth/callback",
+      redirectTo: `${SITE_URL.replace(/\/$/, "")}/auth/callback.html`,
       skipBrowserRedirect: true,
       queryParams: {
         prompt: "select_account",
