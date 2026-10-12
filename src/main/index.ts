@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, powerMonitor, screen, shell, net } from 'electron'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http'
 import { resolve } from 'path'
 import { store } from './preferences'
 import {
@@ -22,6 +23,11 @@ let settingsWindow: BrowserWindow | null = null
 let trayPopupWindow: BrowserWindow | null = null
 let onboardingWindow: BrowserWindow | null = null
 let checkoutWindow: BrowserWindow | null = null
+let pendingGoogleResolve: ((r: { ok: boolean; message?: string }) => void) | null = null
+let googleCallbackServer: Server | null = null
+let googleCallbackStarting: Promise<void> | null = null
+
+const GOOGLE_CALLBACK_PORT = 47829
 
 // --- Icon resolution (falls back gracefully if an asset is missing) ---
 const ASSETS_DIR = resolve(__dirname, '../../assets')
@@ -293,6 +299,133 @@ function saveAccount(data: Record<string, unknown>, fallbackEmail = '') {
   if (data.plan === 'pro') store.set('plan', 'pro')
 }
 
+function focusAccountWindow() {
+  const win = onboardingWindow ?? settingsWindow
+  if (win && !win.isDestroyed()) {
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.focus()
+  }
+  if (process.platform === 'darwin') app.focus({ steal: true })
+}
+
+function settleGoogleAuth(result: { ok: boolean; message?: string }) {
+  const resolveAuth = pendingGoogleResolve
+  pendingGoogleResolve = null
+  resolveAuth?.(result)
+  focusAccountWindow()
+}
+
+async function completeGoogleAuth(params: URLSearchParams): Promise<boolean> {
+  const token = params.get('access_token')
+  const authError = params.get('error_description') || params.get('error')
+
+  if (!token) {
+    settleGoogleAuth({ ok: false, message: authError ?? 'Google sign-in did not return a session.' })
+    return false
+  }
+
+  try {
+    // Do not trust arbitrary local requests. Validate the returned Supabase
+    // token with the backend before persisting it or advancing onboarding.
+    const response = await net.fetch(`${requireApiBase()}/me`, {
+      headers: { authorization: `Bearer ${token}` }
+    })
+    const account = await response.json().catch(() => ({})) as Record<string, unknown>
+    if (!response.ok) {
+      throw new Error(typeof account.message === 'string' ? account.message : 'Google session validation failed.')
+    }
+    saveAccount({ ...account, token })
+    settleGoogleAuth({ ok: true })
+    return true
+  } catch (error) {
+    settleGoogleAuth({
+      ok: false,
+      message: error instanceof Error ? error.message : 'Google sign-in failed.'
+    })
+    return false
+  }
+}
+
+function authCompletionPage(success: boolean) {
+  const heading = success ? 'Signed in successfully' : 'Sign-in could not be completed'
+  const message = success
+    ? 'You can close this tab —<br>iRetina is ready.'
+    : 'Return to iRetina and try Google sign-in again.'
+  const icon = success
+    ? '<polyline points="20 6 9 17 4 12" />'
+    : '<path d="M7 7l10 10M17 7 7 17" />'
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iRetina</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d1117;color:#f0f2f5;font-family:-apple-system,'Segoe UI Variable','Segoe UI',sans-serif;text-align:center}
+.card{padding:48px 32px}.logo{width:96px;height:96px;border-radius:22px;overflow:hidden;margin:0 auto 28px;box-shadow:0 16px 42px rgba(0,120,212,.24),0 0 0 1px rgba(255,255,255,.08)}
+.logo img{display:block;width:100%;height:100%;object-fit:cover}.status{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin:0 auto 24px;background:rgba(0,120,212,.18);border:1.5px solid rgba(0,120,212,.4)}
+.status svg{width:22px;height:22px;fill:none;stroke:#60aaff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}h1{font-size:24px;margin:0 0 10px;letter-spacing:-.3px}p{margin:0;color:rgba(240,242,245,.55);font-size:15px;line-height:1.6}
+</style><script>history.replaceState(null,'','/auth/complete')</script></head><body><main class="card">
+<div class="logo"><img src="/logo.png" alt="iRetina logo"></div><div class="status"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg></div>
+<h1>${heading}</h1><p>${message}</p></main></body></html>`
+}
+
+async function handleGoogleCallbackRequest(request: IncomingMessage, response: ServerResponse) {
+  const requestUrl = new URL(request.url ?? '/', `http://127.0.0.1:${GOOGLE_CALLBACK_PORT}`)
+  response.setHeader('Cache-Control', 'no-store')
+  response.setHeader('Referrer-Policy', 'no-referrer')
+
+  if (requestUrl.pathname === '/logo.png') {
+    response.writeHead(200, { 'Content-Type': 'image/png' })
+    response.end(readFileSync(resolve(ASSETS_DIR, 'logo.png')))
+    return
+  }
+
+  if (requestUrl.pathname === '/auth/callback') {
+    const success = await completeGoogleAuth(requestUrl.searchParams)
+    response.writeHead(303, { Location: success ? '/auth/complete' : '/auth/error' })
+    response.end()
+    return
+  }
+
+  if (requestUrl.pathname === '/auth/complete' || requestUrl.pathname === '/auth/error') {
+    response.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'"
+    })
+    response.end(authCompletionPage(requestUrl.pathname === '/auth/complete'))
+    return
+  }
+
+  response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+  response.end('Not found')
+}
+
+async function ensureGoogleCallbackServer() {
+  if (googleCallbackServer?.listening) return
+  if (googleCallbackStarting) return await googleCallbackStarting
+
+  googleCallbackStarting = new Promise<void>((resolveServer, rejectServer) => {
+    const server = createServer((request, response) => {
+      void handleGoogleCallbackRequest(request, response).catch(() => {
+        if (!response.headersSent) response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+        response.end('Could not finish iRetina sign-in.')
+      })
+    })
+    server.once('error', () => {
+      rejectServer(new Error('Could not start the local Google sign-in callback. Restart iRetina and try again.'))
+    })
+    server.listen(GOOGLE_CALLBACK_PORT, '127.0.0.1', () => {
+      googleCallbackServer = server
+      resolveServer()
+    })
+  })
+
+  try {
+    await googleCallbackStarting
+  } finally {
+    googleCallbackStarting = null
+  }
+}
+
 function createCheckoutWindow(url: string) {
   if (checkoutWindow && !checkoutWindow.isDestroyed()) checkoutWindow.close()
 
@@ -458,6 +591,7 @@ function setupIPC() {
 
   ipcMain.handle('account:google', async () => {
     try {
+      await ensureGoogleCallbackServer()
       const data = await apiPost('/auth/google/start', {})
       if (typeof data.url !== 'string') {
         return { ok: false, message: 'Google sign-in did not return a sign-in URL.' }
@@ -474,11 +608,9 @@ function setupIPC() {
           }
         }, 120_000)
       })
-      // Google OAuth belongs in the system browser. Supabase only honors URLs
-      // on its redirect allow-list; an unlisted custom protocol silently falls
-      // back to the public site URL (the exact failure mode that left setup
-      // spinning). Always return through our HTTPS bridge, which immediately
-      // hands the result to the registered iretina:// desktop protocol.
+      // Google OAuth belongs in the system browser. The HTTPS bridge forwards
+      // the result to the loopback listener above, which works in unpackaged
+      // Electron on macOS as well as the installed Windows application.
       const oauthUrl = new URL(data.url)
       oauthUrl.searchParams.set('redirect_to', 'https://iretina.app/auth/callback.html')
       oauthUrl.searchParams.set('prompt', 'select_account')
@@ -564,26 +696,10 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('iretina')
 }
 
-let pendingGoogleResolve: ((r: { ok: boolean; message?: string }) => void) | null = null
-
 function handleDeepLink(url: string) {
   if (url.startsWith('iretina://auth/callback')) {
     const frag = url.includes('#') ? url.split('#')[1] : url.split('?')[1] ?? ''
-    const p = new URLSearchParams(frag)
-    const token = p.get('access_token')
-    const err = p.get('error_description') || p.get('error')
-    // Persist a valid callback even if it arrives while Windows is still
-    // bringing the existing app instance forward.
-    if (token) store.set('authToken', token)
-    if (pendingGoogleResolve) {
-      if (token) pendingGoogleResolve({ ok: true })
-      else pendingGoogleResolve({ ok: false, message: err ?? 'Google sign-in failed.' })
-      pendingGoogleResolve = null
-    }
-    // Bring app back to the front
-    const win = onboardingWindow ?? settingsWindow
-    if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus() }
-    if (process.platform === 'darwin') app.focus({ steal: true })
+    void completeGoogleAuth(new URLSearchParams(frag))
   }
 }
 
@@ -655,5 +771,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  googleCallbackServer?.close()
   tray?.destroy()
 })
